@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from typing import Optional
 
+
 class Share(BaseModel):
     secid: str
     shortname: str
@@ -8,5 +9,3 @@ class Share(BaseModel):
     open_price: Optional[float] = None
     high_price: Optional[float] = None
     low_price: Optional[float] = None
-    volume: Optional[int] = None
-
