@@ -1,4 +1,5 @@
 from pymoex.core.session import MoexSession
+from pymoex.core.cache import TTLCache
 from pymoex.services.shares import SharesService
 from pymoex.services.search import SearchService
 from pymoex.services.bonds import BondsService
@@ -8,9 +9,12 @@ class MoexClient:
     """Асинхронный клиент для работы с ISS API Московской биржи."""
     def __init__(self):
         self.session = MoexSession()
-        self.shares = SharesService(self.session)
-        self.search = SearchService(self.session)
-        self.bonds = BondsService(self.session)
+        self.cache = TTLCache(ttl=60)
+        self.search_cache = TTLCache(ttl=300)
+
+        self.shares = SharesService(self.session, self.cache)
+        self.search = SearchService(self.session, self.search_cache)
+        self.bonds = BondsService(self.session, self.cache)
 
     async def __aenter__(self):
         return self
