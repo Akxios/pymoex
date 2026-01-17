@@ -7,6 +7,8 @@ class SharesService:
         self.session = session
 
     async def get_share(self, ticker: str) -> Share:
+        price = None
+
         data = await self.session.get(
             f"/engines/stock/markets/shares/securities/{ticker}.json"
         )
@@ -16,8 +18,9 @@ class SharesService:
 
         sec = parse_table(data["securities"])[0]
 
-        md_columns = data["marketdata"]["columns"]
-        md_rows = data["marketdata"]["data"]
+        md_block = data.get("marketdata", {})
+        md_columns = md_block.get("columns", [])
+        md_rows = md_block.get("data", [])
 
         marketdata = [
             dict(zip(md_columns, row))
@@ -30,12 +33,8 @@ class SharesService:
             None
         )
 
-        price = None
         if md:
             price = md.get("LAST") or md.get("WAPRICE")
-
-        if price is None:
-            price = sec.get("PREVPRICE") or sec.get("PREVLEGALCLOSEPRICE")
 
         return Share(
             secid=sec["SECID"],
@@ -44,5 +43,4 @@ class SharesService:
             open_price=md.get("OPEN") if md else None,
             high_price=md.get("HIGH") if md else None,
             low_price=md.get("LOW") if md else None,
-            volume=md.get("VOLUME") if md else None,
         )
