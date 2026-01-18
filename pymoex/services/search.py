@@ -1,9 +1,18 @@
 class SearchService:
+    """Сервис поиска инструментов на Московской бирже."""
+
     def __init__(self, session, cache):
         self.session = session
         self.cache = cache
 
-    async def find(self, query: str, instrument_type: str | None = None):
+    async def find(self, query: str, instrument_type: str | None = None) -> list[dict]:
+        """
+        Поиск инструментов по строке.
+
+        :param query: строка поиска (тикер, название, ISIN)
+        :param instrument_type: 'share', 'bond' или None (все инструменты)
+        :return: список найденных инструментов в виде словарей
+        """
         cache_key = f"search:{query}:{instrument_type or 'all'}"
 
         cached = await self.cache.get(cache_key)

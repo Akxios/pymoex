@@ -4,6 +4,11 @@ from datetime import date
 
 
 class Bond(BaseModel):
+    """
+    Модель облигации Московской биржи.
+    Содержит справочные данные, параметры купона и доходности.
+    """
+
     # Идентификация
     secid: str
     shortname: str
@@ -19,12 +24,13 @@ class Bond(BaseModel):
     yieldatprevwaprice: Optional[float] = None
     yield_percent: Optional[float] = None
 
+    # Купоны
     couponvalue: Optional[float] = None
     couponpercent: Optional[float] = None
     accruedint: Optional[float] = None
     nextcoupon: Optional[date] = None
 
-    # Срок и выплаты
+    # Срок обращения
     matdate: Optional[date] = None
     couponperiod: Optional[int] = None
     dateyieldfromissuer: Optional[date] = None
@@ -36,13 +42,13 @@ class Bond(BaseModel):
     faceunit: Optional[str] = None
     currencyid: Optional[str] = None
 
-    # Ликвидность и надёжность
+    # Ликвидность и листинг
     issuesizeplaced: Optional[int] = None
     listlevel: Optional[int] = None
     status: Optional[str] = None
     sectype: Optional[str] = None
 
-    # Опции и особенности
+    # Опции (оферты, выкуп)
     offerdate: Optional[date] = None
     calloptiondate: Optional[date] = None
     putoptiondate: Optional[date] = None

@@ -4,6 +4,11 @@ from datetime import date
 
 
 class Share(BaseModel):
+    """
+    Модель акции Московской биржи.
+    Содержит как справочную информацию, так и торговые параметры.
+    """
+
     # Идентификация
     secid: str
     shortname: str
@@ -11,7 +16,7 @@ class Share(BaseModel):
     isin: Optional[str] = None
     regnumber: Optional[str] = None
 
-    # Цена и торговля
+    # Цены и торговля
     last_price: Optional[float] = None
     prevprice: Optional[float] = None
     prevwaprice: Optional[float] = None
@@ -20,17 +25,18 @@ class Share(BaseModel):
     high_price: Optional[float] = None
     low_price: Optional[float] = None
 
+    # Валюта и шаг цены
     currencyid: Optional[str] = None
     minstep: Optional[float] = None
     decimals: Optional[int] = None
     settledate: Optional[date] = None
 
-    # Лоты и объёмы
+    # Лоты и объём выпуска
     lotsize: Optional[int] = None
     facevalue: Optional[float] = None
     issuesize: Optional[int] = None
 
-    # Статус и надёжность
+    # Статус и листинг
     status: Optional[str] = None
     listlevel: Optional[int] = None
     sectype: Optional[str] = None

@@ -3,16 +3,19 @@ from pymoex import MoexClient
 
 
 async def main():
-    client = MoexClient()
+    async with MoexClient() as client:
+        # Акции
+        share = await client.share("SBER")
+        print("Share:", share)
 
-    example1 = await client.share("SBER")
-    print(example1)
+        # Поиск (только облигации)
+        bonds = await client.find("сбербанк", instrument_type="bond") # or share
+        print("Search bonds:", bonds)
 
-    example2 = await client.find("сбербанк", "bond")
-    print(example2)
+        # Конкретная облигация
+        bond = await client.bond("RU000A10DS74")
+        print("Bond:", bond)
 
-    example3 = await client.bond("RU000A10DS74")
-    print(example3)
 
 if __name__ == "__main__":
     asyncio.run(main())
