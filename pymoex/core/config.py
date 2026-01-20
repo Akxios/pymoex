@@ -14,9 +14,9 @@ class MoexSettings(BaseSettings):
     - MOEX_USER_AGENT
     """
 
-    base_url: str
-    timeout: int
-    user_agent: str
+    base_url: str = "https://iss.moex.com/iss"
+    timeout: int = 10
+    user_agent: str = "pymoex-sdk/0.1.1"
 
     model_config = SettingsConfigDict(
         env_prefix="MOEX_",
