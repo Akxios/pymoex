@@ -1,3 +1,5 @@
+import asyncio
+
 from pymoex.core.session import MoexSession
 from pymoex.core.cache import TTLCache
 from pymoex.services.shares import SharesService
@@ -27,8 +29,8 @@ class MoexClient:
         self.session = MoexSession()
 
         # Кэши
-        self.cache = TTLCache(ttl=price_ttl)
-        self.search_cache = TTLCache(ttl=search_ttl)
+        self.cache = TTLCache(ttl=price_ttl, maxsize=1000)
+        self.search_cache = TTLCache(ttl=search_ttl, maxsize=2000)
 
         # Сервисы
         self.shares = SharesService(self.session, self.cache)
@@ -42,7 +44,40 @@ class MoexClient:
         await self.close()
 
     async def close(self) -> None:
-        """Закрыть HTTP-сессию."""
+        """
+        Закрыть HTTP-сессию и аккуратно очистить локальные кэши.
+        Вызывать только когда нет активных запросов к клиенту.
+        """
+        # 1) Остановить background cleanup (если реализовано)
+        for c in (getattr(self, "cache", None), getattr(self, "search_cache", None)):
+            if c is None:
+                continue
+            stop = getattr(c, "stop_cleanup", None)
+            if callable(stop):
+                try:
+                    res = stop()
+                    # stop_cleanup может быть sync или async
+                    if asyncio.iscoroutine(res):
+                        await res
+                except Exception:
+                    # не критично — просто логировать по желанию
+                    pass
+
+        # 2) Очистить локальные in-memory кэши (если есть)
+        for c in (getattr(self, "cache", None), getattr(self, "search_cache", None)):
+            if c is None:
+                continue
+            clear = getattr(c, "clear", None)
+            if callable(clear):
+                try:
+                    maybe = clear()
+                    if asyncio.iscoroutine(maybe):
+                        await maybe
+                except Exception:
+                    # не критично — можно логировать
+                    pass
+
+        # 3) Закрыть HTTP-сессию
         await self.session.close()
 
     async def share(self, ticker: str) -> Share:
