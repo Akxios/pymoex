@@ -57,5 +57,5 @@ class Bond(BaseModel):
 
     # Классификация
     bond_type: Optional[str] = None
-    bond_subtype: Optional[str] = None
+    bond_sub_type: Optional[str] = None
     sector_id: Optional[str] = None
