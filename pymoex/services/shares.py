@@ -1,5 +1,6 @@
 from pymoex.models.share import Share
 from pymoex.utils.table import parse_table
+from pymoex.core import endpoints
 
 
 class SharesService:
@@ -27,7 +28,7 @@ class SharesService:
     async def _load_share(self, ticker: str) -> Share:
         """Загрузка данных по акции напрямую из MOEX ISS API."""
         data = await self.session.get(
-            f"/engines/stock/markets/shares/securities/{ticker}.json"
+            endpoints.share(ticker)
         )
 
         if not data["securities"]["data"]:
@@ -91,4 +92,3 @@ class SharesService:
             md.get("HIGH"),
             md.get("LOW"),
         )
-
