@@ -16,15 +16,13 @@ class SharesService:
         :param ticker: тикер акции (например, 'SBER')
         :return: модель Share
         """
+        ticker = ticker.upper()
         cache_key = f"share:{ticker}"
 
-        cached = await self.cache.get(cache_key)
-        if cached:
-            return cached
+        async def _fetch():
+            return await self._load_share(ticker)
 
-        share = await self._load_share(ticker)
-        await self.cache.set(cache_key, share)
-        return share
+        return await self.cache.get_or_set(cache_key, _fetch, ttl=None)
 
     async def _load_share(self, ticker: str) -> Share:
         """Загрузка данных по акции напрямую из MOEX ISS API."""
@@ -37,23 +35,10 @@ class SharesService:
 
         sec = parse_table(data["securities"])[0]
 
-        md_block = data.get("marketdata", {})
-        md_columns = md_block.get("columns", [])
-        md_rows = md_block.get("data", [])
+        md_list = parse_table(data.get("marketdata", {}))
+        md = next((r for r in md_list if r.get("BOARDID") == "TQBR"), None)
 
-        marketdata = [dict(zip(md_columns, row)) for row in md_rows if row]
-        md = next((row for row in marketdata if row.get("BOARDID") == "TQBR"), None)
-
-        last_price = None
-        open_price = None
-        high_price = None
-        low_price = None
-
-        if md:
-            last_price = md.get("LAST") or md.get("WAPRICE")
-            open_price = md.get("OPEN")
-            high_price = md.get("HIGH")
-            low_price = md.get("LOW")
+        last_price, open_price, high_price, low_price = self._extract_prices(md)
 
         return Share(
             # Идентификация
@@ -61,37 +46,49 @@ class SharesService:
             shortname=sec.get("SHORTNAME"),
             secname=sec.get("SECNAME"),
             isin=sec.get("ISIN"),
-            regnumber=sec.get("REGNUMBER"),
+            reg_number=sec.get("REGNUMBER"),
 
             # Цены
             last_price=last_price,
-            prevprice=sec.get("PREVPRICE"),
-            prevwaprice=sec.get("PREVWAPRICE"),
-            prevlegalcloseprice=sec.get("PREVLEGALCLOSEPRICE"),
+            prev_price=sec.get("PREVPRICE"),
+            prev_waprice=sec.get("PREVWAPRICE"),
+            prev_legal_close_price=sec.get("PREVLEGALCLOSEPRICE"),
             open_price=open_price,
             high_price=high_price,
             low_price=low_price,
 
             # Параметры торгов
-            currencyid=sec.get("CURRENCYID"),
-            minstep=sec.get("MINSTEP"),
+            currency_id=sec.get("CURRENCYID"),
+            min_step=sec.get("MINSTEP"),
             decimals=sec.get("DECIMALS"),
-            settledate=sec.get("SETTLEDATE"),
+            settle_date=sec.get("SETTLEDATE"),
 
             # Лоты и объём
-            lotsize=sec.get("LOTSIZE"),
-            facevalue=sec.get("FACEVALUE"),
-            issuesize=sec.get("ISSUESIZE"),
+            lot_size=sec.get("LOTSIZE"),
+            face_value=sec.get("FACEVALUE"),
+            issue_size=sec.get("ISSUESIZE"),
 
             # Статус и листинг
             status=sec.get("STATUS"),
-            listlevel=sec.get("LISTLEVEL"),
-            sectype=sec.get("SECTYPE"),
+            list_level=sec.get("LISTLEVEL"),
+            sec_type=sec.get("SECTYPE"),
 
             # Классификация
-            boardid=md.get("BOARDID") if md else sec.get("BOARDID"),
-            boardname=md.get("BOARDNAME") if md else sec.get("BOARDNAME"),
-            sectorid=sec.get("SECTORID"),
-            marketcode=sec.get("MARKETCODE"),
-            instrid=sec.get("INSTRID"),
+            board_id=md.get("BOARDID") if md else sec.get("BOARDID"),
+            board_name=md.get("BOARDNAME") if md else sec.get("BOARDNAME"),
+            sector_id=sec.get("SECTORID"),
+            market_code=sec.get("MARKETCODE"),
+            instr_id=sec.get("INSTRID"),
         )
+
+    @staticmethod
+    def _extract_prices(md: dict | None):
+        if not md:
+            return None, None, None, None
+        return (
+            md.get("LAST") or md.get("WAPRICE"),
+            md.get("OPEN"),
+            md.get("HIGH"),
+            md.get("LOW"),
+        )
+
