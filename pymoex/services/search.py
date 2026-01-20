@@ -1,3 +1,7 @@
+from pymoex.core import endpoints
+from pymoex.models.enums import InstrumentType
+
+
 class SearchService:
     """Сервис поиска инструментов на Московской бирже."""
 
@@ -5,33 +9,44 @@ class SearchService:
         self.session = session
         self.cache = cache
 
-    async def find(self, query: str, instrument_type: str | None = None) -> list[dict]:
-        """
-        Поиск инструментов по строке.
+    async def find(
+        self,
+        query: str,
+        instrument_type: InstrumentType | str | None = None,
+    ) -> list[dict]:
 
-        :param query: строка поиска (тикер, название, ISIN)
-        :param instrument_type: 'share', 'bond' или None (все инструменты)
-        :return: список найденных инструментов в виде словарей
-        """
-        cache_key = f"search:{query}:{instrument_type or 'all'}"
+        query_norm = query.strip().lower()
+        itype = self._normalize_instrument_type(instrument_type)
+        cache_key = f"search:{query_norm}:{itype.value if itype else 'all'}"
 
-        cached = await self.cache.get(cache_key)
-        if cached:
-            return cached
+        async def _fetch():
+            data = await self.session.get(
+                endpoints.search(),
+                params={"q": query_norm, "limit": 1000},
+            )
 
-        data = await self.session.get(
-            "/securities.json",
-            params={"q": query, "limit": 1000}
-        )
+            columns = data["securities"]["columns"]
+            rows = data["securities"]["data"]
+            result = [dict(zip(columns, row)) for row in rows]
 
-        columns = data["securities"]["columns"]
-        rows = data["securities"]["data"]
-        result = [dict(zip(columns, row)) for row in rows]
+            if itype == InstrumentType.SHARE:
+                result = [r for r in result if r.get("group") == "stock_shares"]
+            elif itype == InstrumentType.BOND:
+                result = [r for r in result if r.get("group") == "stock_bonds"]
 
-        if instrument_type == "share":
-            result = [r for r in result if r.get("group") == "stock_shares"]
-        elif instrument_type == "bond":
-            result = [r for r in result if r.get("group") == "stock_bonds"]
+            return result
 
-        await self.cache.set(cache_key, result)
-        return result
+        return await self.cache.get_or_set(cache_key, _fetch)
+
+    @staticmethod
+    def _normalize_instrument_type(
+        value: InstrumentType | str | None
+    ) -> InstrumentType | None:
+        if value is None:
+            return None
+        if isinstance(value, InstrumentType):
+            return value
+        try:
+            return InstrumentType(value.lower())
+        except ValueError:
+            raise ValueError(f"Unknown instrument type: {value!r}")
