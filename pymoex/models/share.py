@@ -14,36 +14,36 @@ class Share(BaseModel):
     shortname: str
     secname: Optional[str] = None
     isin: Optional[str] = None
-    regnumber: Optional[str] = None
+    reg_number: Optional[str] = None
 
     # Цены и торговля
     last_price: Optional[float] = None
-    prevprice: Optional[float] = None
-    prevwaprice: Optional[float] = None
-    prevlegalcloseprice: Optional[float] = None
+    prev_price: Optional[float] = None
+    prev_waprice: Optional[float] = None
+    prev_legal_close_price: Optional[float] = None
     open_price: Optional[float] = None
     high_price: Optional[float] = None
     low_price: Optional[float] = None
 
     # Валюта и шаг цены
-    currencyid: Optional[str] = None
-    minstep: Optional[float] = None
+    currency_id: Optional[str] = None
+    min_step: Optional[float] = None
     decimals: Optional[int] = None
-    settledate: Optional[date] = None
+    settle_date: Optional[date] = None
 
     # Лоты и объём выпуска
-    lotsize: Optional[int] = None
-    facevalue: Optional[float] = None
-    issuesize: Optional[int] = None
+    lot_size: Optional[int] = None
+    face_value: Optional[float] = None
+    issue_size: Optional[int] = None
 
     # Статус и листинг
     status: Optional[str] = None
-    listlevel: Optional[int] = None
-    sectype: Optional[str] = None
+    list_level: Optional[int] = None
+    sec_type: Optional[str] = None
 
     # Классификация
-    boardid: Optional[str] = None
-    boardname: Optional[str] = None
-    sectorid: Optional[str] = None
-    marketcode: Optional[str] = None
-    instrid: Optional[str] = None
+    board_id: Optional[str] = None
+    board_name: Optional[str] = None
+    sector_id: Optional[str] = None
+    market_code: Optional[str] = None
+    instr_id: Optional[str] = None
