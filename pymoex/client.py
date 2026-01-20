@@ -7,6 +7,7 @@ from pymoex.services.search import SearchService
 from pymoex.services.bonds import BondsService
 from pymoex.models.share import Share
 from pymoex.models.bond import Bond
+from pymoex.models.enums import InstrumentType
 
 
 class MoexClient:
@@ -98,7 +99,7 @@ class MoexClient:
         """
         return await self.bonds.get_bond(ticker)
 
-    async def find(self, query: str, instrument_type: str | None = None):
+    async def find(self, query: str, instrument_type: InstrumentType | str | None = None):
         """
         Поиск инструментов по строке.
 
@@ -107,3 +108,9 @@ class MoexClient:
         :return: список найденных инструментов
         """
         return await self.search.find(query, instrument_type)
+
+    async def find_bonds(self, query: str):
+        return await self.search.find(query, InstrumentType.BOND)
+
+    async def find_shares(self, query: str):
+        return await self.search.find(query, InstrumentType.SHARE)
