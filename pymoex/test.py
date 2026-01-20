@@ -8,9 +8,15 @@ async def main():
         share = await client.share("SBER")
         print("Share:", share)
 
-        # Поиск (только облигации)
-        bonds = await client.find("сбербанк", instrument_type="bond") # or share
-        print("Search bonds:", bonds)
+        # Поиск (облигации и акции)
+        search_example1 = await client.find_shares("сбербанк")
+        print("Search bonds:", search_example1)
+
+        search_example2 = await client.find_bonds("сбербанк")
+        print("Search bonds:", search_example2)
+
+        search_example3 = await client.find("сбербанк", "bond") # or share
+        print("Search bonds:", search_example3)
 
         # Конкретная облигация
         bond = await client.bond("RU000A10DS74")
