@@ -9,6 +9,23 @@ class Bond(BaseModel):
     Содержит справочные данные, параметры купона и доходности.
     """
 
+    def __repr__(self) -> str:
+        parts = [self.secid]
+
+        if self.shortname:
+            parts.append(self.shortname)
+
+        if self.last_price is not None:
+            parts.append(f"price={self.last_price}")
+
+        if self.yield_percent is not None:
+            parts.append(f"yield={self.yield_percent}%")
+
+        return f"<Bond {' | '.join(parts)}>"
+
+    def __str__(self) -> str:
+        return self.__repr__()
+
     # Идентификация
     secid: str
     shortname: str
@@ -21,7 +38,7 @@ class Bond(BaseModel):
     prev_waprice: Optional[float] = None
     prev_price: Optional[float] = None
     prev_legal_close_price: Optional[float] = None
-    yiel_dat_prevwa_price: Optional[float] = None
+    yiel_dat_prev_waprice: Optional[float] = None
     yield_percent: Optional[float] = None
 
     # Купоны

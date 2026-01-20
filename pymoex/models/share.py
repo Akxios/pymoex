@@ -9,6 +9,20 @@ class Share(BaseModel):
     Содержит как справочную информацию, так и торговые параметры.
     """
 
+    def __repr__(self) -> str:
+        parts = [self.secid]
+
+        if self.shortname:
+            parts.append(self.shortname)
+
+        if self.last_price is not None:
+            parts.append(f"price={self.last_price}")
+
+        return f"<Share {' | '.join(parts)}>"
+
+    def __str__(self) -> str:
+        return self.__repr__()
+
     # Идентификация
     secid: str
     shortname: str
