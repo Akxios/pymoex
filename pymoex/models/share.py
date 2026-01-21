@@ -10,7 +10,7 @@ class Share(BaseModel):
     """
 
     def __repr__(self) -> str:
-        parts = [self.secid]
+        parts = [self.sec_id]
 
         if self.shortname:
             parts.append(self.shortname)
@@ -24,16 +24,16 @@ class Share(BaseModel):
         return self.__repr__()
 
     # Идентификация
-    secid: str
+    sec_id: str
     shortname: str
-    secname: Optional[str] = None
-    isin: Optional[str] = None
+    sec_name: Optional[str] = None
+    is_in: Optional[str] = None
     reg_number: Optional[str] = None
 
     # Цены и торговля
     last_price: Optional[float] = None
     prev_price: Optional[float] = None
-    prev_waprice: Optional[float] = None
+    prev_wa_price: Optional[float] = None
     prev_legal_close_price: Optional[float] = None
     open_price: Optional[float] = None
     high_price: Optional[float] = None

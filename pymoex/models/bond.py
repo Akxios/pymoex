@@ -10,7 +10,7 @@ class Bond(BaseModel):
     """
 
     def __repr__(self) -> str:
-        parts = [self.secid]
+        parts = [self.sec_id]
 
         if self.shortname:
             parts.append(self.shortname)
@@ -27,18 +27,14 @@ class Bond(BaseModel):
         return self.__repr__()
 
     # Идентификация
-    secid: str
+    sec_id: str
     shortname: str
-    secname: Optional[str] = None
-    isin: Optional[str] = None
+    sec_name: Optional[str] = None
+    is_in: Optional[str] = None
     reg_number: Optional[str] = None
 
     # Цена и доходность
     last_price: Optional[float] = None
-    prev_waprice: Optional[float] = None
-    prev_price: Optional[float] = None
-    prev_legal_close_price: Optional[float] = None
-    yiel_dat_prev_waprice: Optional[float] = None
     yield_percent: Optional[float] = None
 
     # Купоны
@@ -47,7 +43,7 @@ class Bond(BaseModel):
     accrued_int: Optional[float] = None
     next_coupon: Optional[date] = None
 
-    # Срок обращения
+    # Сроки
     mat_date: Optional[date] = None
     coupon_period: Optional[int] = None
     date_yield_from_issuer: Optional[date] = None
