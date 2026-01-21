@@ -56,10 +56,11 @@ class BondsService:
         yield_percent = self._extract_yield(yld)
 
         return Bond(
-            secid=sec.get("SECID"),
+            # Идентификация
+            sec_id=sec.get("SECID"),
             shortname=sec.get("SHORTNAME"),
-            secname=sec.get("SECNAME"),
-            isin=sec.get("ISIN"),
+            sec_name=sec.get("SECNAME"),
+            is_in=sec.get("ISIN"),
             reg_number=sec.get("REGNUMBER"),
 
             # Цена и доходность
@@ -84,13 +85,13 @@ class BondsService:
             face_unit=sec.get("FACEUNIT"),
             currency_id=sec.get("CURRENCYID"),
 
-            # Статус
+            # Ликвидность и листинг
             issue_size_placed=sec.get("ISSUESIZEPLACED"),
             list_level=sec.get("LISTLEVEL"),
             status=sec.get("STATUS"),
             sec_type=sec.get("SECTYPE"),
 
-            # Опции
+            # Опции (оферты, выкуп)
             offer_date=safe_date(sec.get("OFFERDATE")),
             calloption_date=safe_date(sec.get("CALLOPTIONDATE")),
             put_option_date=safe_date(sec.get("PUTOPTIONDATE")),
@@ -110,7 +111,6 @@ class BondsService:
         return (
                 md.get("LAST")
                 or md.get("WAPRICE")
-                or md.get("MARKETPRICE")
                 or md.get("PREVLEGALCLOSEPRICE")
         )
 

@@ -43,28 +43,28 @@ class SharesService:
 
         return Share(
             # Идентификация
-            secid=sec.get("SECID"),
+            sec_id=sec.get("SECID"),
             shortname=sec.get("SHORTNAME"),
-            secname=sec.get("SECNAME"),
-            isin=sec.get("ISIN"),
+            sec_name=sec.get("SECNAME"),
+            is_in=sec.get("ISIN"),
             reg_number=sec.get("REGNUMBER"),
 
-            # Цены
+            # Цены и торговля
             last_price=last_price,
             prev_price=sec.get("PREVPRICE"),
-            prev_waprice=sec.get("PREVWAPRICE"),
+            prev_wa_price=sec.get("PREVWAPRICE"),
             prev_legal_close_price=sec.get("PREVLEGALCLOSEPRICE"),
             open_price=open_price,
             high_price=high_price,
             low_price=low_price,
 
-            # Параметры торгов
+            # Валюта и шаг цены
             currency_id=sec.get("CURRENCYID"),
             min_step=sec.get("MINSTEP"),
             decimals=sec.get("DECIMALS"),
             settle_date=sec.get("SETTLEDATE"),
 
-            # Лоты и объём
+            # Лоты и объём выпуска
             lot_size=sec.get("LOTSIZE"),
             face_value=sec.get("FACEVALUE"),
             issue_size=sec.get("ISSUESIZE"),
