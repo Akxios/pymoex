@@ -3,9 +3,22 @@ from typing import Optional
 
 
 class SearchResult(BaseModel):
+    """
+    Результат поиска инструмента на Московской бирже.
+
+    Содержит базовую справочную информацию:
+    - идентификаторы (SECID, ISIN, регномер)
+    - тип и группу инструмента
+    - данные об эмитенте
+    - торговые площадки
+    """
 
     def __repr__(self) -> str:
-        # Тип инструмента
+        """
+        Короткое человекочитаемое представление результата поиска.
+        Используется в логах, консоли и отладке.
+        """
+        # Определяем тип инструмента по группе
         if self.group == "stock_bonds":
             kind = "Bond"
         elif self.group == "stock_shares":
@@ -31,21 +44,24 @@ class SearchResult(BaseModel):
     def __str__(self) -> str:
         return self.__repr__()
 
-    secid: str
-    shortname: str
-    name: str
+    # --- Идентификация ---
+    secid: str                 # торговый код / ISIN
+    shortname: str             # краткое название
+    name: str                  # полное наименование
+
     isin: Optional[str] = None
     regnumber: Optional[str] = None
 
-    type: Optional[str] = None
-    group: Optional[str] = None
+    # --- Тип и рынок ---
+    type: Optional[str] = None     # тип бумаги (common_share, corporate_bond и т.п.)
+    group: Optional[str] = None    # группа рынка (stock_shares, stock_bonds, options)
 
+    # --- Торговые параметры ---
     is_traded: Optional[bool] = None
     primary_boardid: Optional[str] = None
     marketprice_boardid: Optional[str] = None
 
+    # --- Эмитент ---
     emitent_id: Optional[int] = None
     emitent_title: Optional[str] = None
     emitent_inn: Optional[str] = None
-
-
