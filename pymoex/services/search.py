@@ -1,6 +1,6 @@
 from pymoex.core import endpoints
 from pymoex.models.enums import InstrumentType
-
+from pymoex.models.search import SearchResult
 
 class SearchService:
     """Сервис поиска инструментов на Московской бирже."""
@@ -10,10 +10,10 @@ class SearchService:
         self.cache = cache
 
     async def find(
-        self,
-        query: str,
-        instrument_type: InstrumentType | str | None = None,
-    ) -> list[dict]:
+            self,
+            query: str,
+            instrument_type: InstrumentType | str | None = None,
+    ) -> list[SearchResult]:
 
         query_norm = query.strip().lower()
         itype = self._normalize_instrument_type(instrument_type)
@@ -27,14 +27,14 @@ class SearchService:
 
             columns = data["securities"]["columns"]
             rows = data["securities"]["data"]
-            result = [dict(zip(columns, row)) for row in rows]
+            raw = [dict(zip(columns, row)) for row in rows]
 
             if itype == InstrumentType.SHARE:
-                result = [r for r in result if r.get("group") == "stock_shares"]
+                raw = [r for r in raw if r.get("group") == "stock_shares"]
             elif itype == InstrumentType.BOND:
-                result = [r for r in result if r.get("group") == "stock_bonds"]
+                raw = [r for r in raw if r.get("group") == "stock_bonds"]
 
-            return result
+            return [SearchResult(**r) for r in raw]
 
         return await self.cache.get_or_set(cache_key, _fetch)
 
