@@ -1,6 +1,6 @@
+from pymoex.core import endpoints
 from pymoex.models.share import Share
 from pymoex.utils.table import parse_table
-from pymoex.core import endpoints
 
 
 class SharesService:
@@ -69,12 +69,11 @@ class SharesService:
         # Формируем доменную модель
         return Share(
             # --- Идентификация ---
-            sec_id=sec.get("SECID"),
-            shortname=sec.get("SHORTNAME"),
+            sec_id=sec["SECID"],
+            short_name=sec["SHORTNAME"],
             sec_name=sec.get("SECNAME"),
             is_in=sec.get("ISIN"),
             reg_number=sec.get("REGNUMBER"),
-
             # --- Цены и торговля ---
             last_price=last_price,
             prev_price=sec.get("PREVPRICE"),
@@ -83,23 +82,19 @@ class SharesService:
             open_price=open_price,
             high_price=high_price,
             low_price=low_price,
-
             # --- Валюта и шаг цены ---
             currency_id=sec.get("CURRENCYID"),
             min_step=sec.get("MINSTEP"),
             decimals=sec.get("DECIMALS"),
             settle_date=sec.get("SETTLEDATE"),
-
             # --- Лоты и объём выпуска ---
             lot_size=sec.get("LOTSIZE"),
             face_value=sec.get("FACEVALUE"),
             issue_size=sec.get("ISSUESIZE"),
-
             # --- Статус и листинг ---
             status=sec.get("STATUS"),
             list_level=sec.get("LISTLEVEL"),
             sec_type=sec.get("SECTYPE"),
-
             # --- Классификация и рынок ---
             board_id=md.get("BOARDID") if md else sec.get("BOARDID"),
             board_name=md.get("BOARDNAME") if md else sec.get("BOARDNAME"),
@@ -119,7 +114,7 @@ class SharesService:
 
         return (
             md.get("LAST") or md.get("WAPRICE"),  # последняя цена
-            md.get("OPEN"),                      # цена открытия
-            md.get("HIGH"),                      # максимум дня
-            md.get("LOW"),                       # минимум дня
+            md.get("OPEN"),  # цена открытия
+            md.get("HIGH"),  # максимум дня
+            md.get("LOW"),  # минимум дня
         )

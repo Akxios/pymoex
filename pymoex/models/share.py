@@ -1,6 +1,7 @@
-from pydantic import BaseModel
-from typing import Optional
 from datetime import date
+from typing import Optional
+
+from pydantic import BaseModel
 
 
 class Share(BaseModel):
@@ -21,8 +22,8 @@ class Share(BaseModel):
         """
         parts = [self.sec_id]
 
-        if self.shortname:
-            parts.append(self.shortname)
+        if self.short_name:
+            parts.append(self.short_name)
 
         if self.last_price is not None:
             parts.append(f"price={self.last_price}")
@@ -33,10 +34,10 @@ class Share(BaseModel):
         return self.__repr__()
 
     # --- Идентификация ---
-    sec_id: str                    # торговый код
-    shortname: str                # краткое название
+    sec_id: str  # торговый код
+    short_name: str  # краткое название
     sec_name: Optional[str] = None
-    is_in: Optional[str] = None   # ISIN
+    is_in: Optional[str] = None  # ISIN
     reg_number: Optional[str] = None
 
     # --- Цены и торговые параметры ---

@@ -1,7 +1,7 @@
+from pymoex.core import endpoints
 from pymoex.models.bond import Bond
 from pymoex.utils.table import first_row
 from pymoex.utils.types import safe_date
-from pymoex.core import endpoints
 
 
 class BondsService:
@@ -80,47 +80,40 @@ class BondsService:
         # --- 3. Формирование доменной модели ---
         return Bond(
             # Идентификация
-            sec_id=sec.get("SECID"),
-            shortname=sec.get("SHORTNAME"),
+            sec_id=sec["SECID"],
+            short_name=sec["SHORTNAME"],
             sec_name=sec.get("SECNAME"),
             is_in=sec.get("ISIN"),
             reg_number=sec.get("REGNUMBER"),
-
             # Цена и доходность
             last_price=last_price,
             yield_percent=yield_percent,
-
             # Купоны
             coupon_value=sec.get("COUPONVALUE"),
             coupon_percent=sec.get("COUPONPERCENT"),
             accrued_int=sec.get("ACCRUEDINT"),
             next_coupon=safe_date(sec.get("NEXTCOUPON")),
-
             # Сроки
             mat_date=safe_date(sec.get("MATDATE")),
             coupon_period=sec.get("COUPONPERIOD"),
             date_yield_from_issuer=safe_date(sec.get("DATEYIELDFROMISSUER")),
-
             # Номинал и лоты
             face_value=sec.get("FACEVALUE"),
             lot_size=sec.get("LOTSIZE"),
             lot_value=sec.get("LOTVALUE"),
             face_unit=sec.get("FACEUNIT"),
             currency_id=sec.get("CURRENCYID"),
-
             # Ликвидность и листинг
             issue_size_placed=sec.get("ISSUESIZEPLACED"),
             list_level=sec.get("LISTLEVEL"),
             status=sec.get("STATUS"),
             sec_type=sec.get("SECTYPE"),
-
             # Опции (оферты, выкуп)
             offer_date=safe_date(sec.get("OFFERDATE")),
             calloption_date=safe_date(sec.get("CALLOPTIONDATE")),
             put_option_date=safe_date(sec.get("PUTOPTIONDATE")),
             buyback_date=safe_date(sec.get("BUYBACKDATE")),
             buyback_price=sec.get("BUYBACKPRICE"),
-
             # Классификация
             bond_type=sec.get("BONDTYPE"),
             bond_sub_type=sec.get("BONDSUBTYPE"),
@@ -136,11 +129,7 @@ class BondsService:
         if not md:
             return None
 
-        return (
-            md.get("LAST")
-            or md.get("WAPRICE")
-            or md.get("PREVLEGALCLOSEPRICE")
-        )
+        return md.get("LAST") or md.get("WAPRICE") or md.get("PREVLEGALCLOSEPRICE")
 
     @staticmethod
     def _extract_yield(yld: dict | None) -> float | None:

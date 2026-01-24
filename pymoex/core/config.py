@@ -1,4 +1,5 @@
 from pathlib import Path
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # Корень проекта (используется для поиска .env)
@@ -30,9 +31,9 @@ class MoexSettings(BaseSettings):
 
     # Конфигурация pydantic-settings
     model_config = SettingsConfigDict(
-        env_prefix="MOEX_",            # префикс переменных окружения
-        env_file=BASE_DIR / ".env",   # путь к .env файлу
-        env_file_encoding="utf-8",    # кодировка файла
+        env_prefix="MOEX_",  # префикс переменных окружения
+        env_file=BASE_DIR / ".env",  # путь к .env файлу
+        env_file_encoding="utf-8",  # кодировка файла
     )
 
 

@@ -1,6 +1,7 @@
-from pydantic import BaseModel
-from typing import Optional
 from datetime import date
+from typing import Optional
+
+from pydantic import BaseModel
 
 
 class Bond(BaseModel):
@@ -24,8 +25,8 @@ class Bond(BaseModel):
         """
         parts = [self.sec_id]
 
-        if self.shortname:
-            parts.append(self.shortname)
+        if self.short_name:
+            parts.append(self.short_name)
 
         if self.last_price is not None:
             parts.append(f"price={self.last_price}")
@@ -39,25 +40,25 @@ class Bond(BaseModel):
         return self.__repr__()
 
     # --- Идентификация инструмента ---
-    sec_id: str                    # торговый код / ISIN
-    shortname: str                # краткое название
+    sec_id: str  # торговый код / ISIN
+    short_name: str  # краткое название
     sec_name: Optional[str] = None
-    is_in: Optional[str] = None   # ISIN
+    is_in: Optional[str] = None  # ISIN
     reg_number: Optional[str] = None
 
     # --- Рыночные показатели ---
-    last_price: Optional[float] = None     # последняя цена
+    last_price: Optional[float] = None  # последняя цена
     yield_percent: Optional[float] = None  # эффективная доходность, %
 
     # --- Купонные параметры ---
     coupon_value: Optional[float] = None
     coupon_percent: Optional[float] = None
-    accrued_int: Optional[float] = None    # НКД
-    next_coupon: Optional[date] = None     # дата следующего купона
+    accrued_int: Optional[float] = None  # НКД
+    next_coupon: Optional[date] = None  # дата следующего купона
 
     # --- Сроки обращения ---
-    mat_date: Optional[date] = None                # дата погашения
-    coupon_period: Optional[int] = None            # периодичность купона (дни)
+    mat_date: Optional[date] = None  # дата погашения
+    coupon_period: Optional[int] = None  # периодичность купона (дни)
     date_yield_from_issuer: Optional[date] = None  # дата начала расчёта доходности
 
     # --- Номинал и расчёт лотов ---
