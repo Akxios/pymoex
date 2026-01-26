@@ -1,4 +1,5 @@
 from pymoex.core import endpoints
+from pymoex.exceptions import InstrumentNotFoundError
 from pymoex.models.bond import Bond
 from pymoex.utils.table import first_row
 from pymoex.utils.types import safe_date
@@ -61,7 +62,7 @@ class BondsService:
         # Преобразуем строки в dict и ищем нужный тикер
         sec = next((dict(zip(cols, r)) for r in rows if r[0] == ticker), None)
         if not sec:
-            raise ValueError(f"Bond {ticker} not found")
+            raise InstrumentNotFoundError(f"Bond {ticker} not found")
 
         # --- 2. Загрузка рыночных данных ---
         market = await self.session.get(
