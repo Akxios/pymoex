@@ -1,4 +1,5 @@
 from pymoex.core import endpoints
+from pymoex.exceptions import InstrumentNotFoundError
 from pymoex.models.share import Share
 from pymoex.utils.table import parse_table
 
@@ -52,7 +53,7 @@ class SharesService:
 
         # Проверяем, что бумага существует
         if not data["securities"]["data"]:
-            raise ValueError(f"Security {ticker} not found")
+            raise InstrumentNotFoundError(f"Share {ticker} not found")
 
         # Таблица securities -> список словарей
         sec = parse_table(data["securities"])[0]
