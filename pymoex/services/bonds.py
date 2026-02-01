@@ -71,11 +71,9 @@ class BondsService:
 
         # Берём первые строки из таблиц
         sec = first_row(market["securities"])
-        md = first_row(market["marketdata"])
         yld = first_row(market["marketdata_yields"])
 
         # Извлекаем цену и доходность с fallback-логикой
-        last_price = self._extract_price(md)
         yield_percent = self._extract_yield(yld)
 
         # --- 3. Формирование доменной модели ---
@@ -87,7 +85,7 @@ class BondsService:
             is_in=sec.get("ISIN"),
             reg_number=sec.get("REGNUMBER"),
             # Цена и доходность
-            last_price=last_price,
+            last_price=sec.get("PREVWAPRICE"),
             yield_percent=yield_percent,
             # Купоны
             coupon_value=sec.get("COUPONVALUE"),
@@ -120,17 +118,6 @@ class BondsService:
             bond_sub_type=sec.get("BONDSUBTYPE"),
             sector_id=sec.get("SECTORID"),
         )
-
-    @staticmethod
-    def _extract_price(md: dict | None) -> float | None:
-        """
-        Извлечение последней цены с приоритетом:
-        LAST -> WAPRICE -> PREVLEGALCLOSEPRICE
-        """
-        if not md:
-            return None
-
-        return md.get("LAST") or md.get("WAPRICE") or md.get("PREVLEGALCLOSEPRICE")
 
     @staticmethod
     def _extract_yield(yld: dict | None) -> float | None:
