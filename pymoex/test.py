@@ -17,7 +17,7 @@ async def main():
 
         # Конкретная облигация
         bond = await client.bond("RU000A10DS74")
-        print(bond)
+        print(bond.last_price)
 
 
 if __name__ == "__main__":
