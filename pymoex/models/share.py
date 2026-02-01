@@ -42,9 +42,6 @@ class Share(BaseModel):
 
     # --- Цены и торговые параметры ---
     last_price: Optional[float] = None
-    prev_price: Optional[float] = None
-    prev_wa_price: Optional[float] = None
-    prev_legal_close_price: Optional[float] = None
     open_price: Optional[float] = None
     high_price: Optional[float] = None
     low_price: Optional[float] = None
