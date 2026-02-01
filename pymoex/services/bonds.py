@@ -85,12 +85,12 @@ class BondsService:
             is_in=sec.get("ISIN"),
             reg_number=sec.get("REGNUMBER"),
             # Цена и доходность
-            last_price=sec.get("PREVWAPRICE"),
+            price_percent=sec.get("PREVWAPRICE"),
             yield_percent=yield_percent,
             # Купоны
             coupon_value=sec.get("COUPONVALUE"),
             coupon_percent=sec.get("COUPONPERCENT"),
-            accrued_int=sec.get("ACCRUEDINT"),
+            accruedint=sec.get("ACCRUEDINT"),
             next_coupon=safe_date(sec.get("NEXTCOUPON")),
             # Сроки
             mat_date=safe_date(sec.get("MATDATE")),
