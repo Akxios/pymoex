@@ -65,7 +65,7 @@ class SharesService:
         md = next((r for r in md_list if r.get("BOARDID") == "TQBR"), None)
 
         # Извлекаем цены с fallback-логикой
-        last_price, open_price, high_price, low_price = self._extract_prices(md)
+        open_price, high_price, low_price = self._extract_prices(md)
 
         # Формируем доменную модель
         return Share(
@@ -76,10 +76,7 @@ class SharesService:
             is_in=sec.get("ISIN"),
             reg_number=sec.get("REGNUMBER"),
             # --- Цены и торговля ---
-            last_price=last_price,
-            prev_price=sec.get("PREVPRICE"),
-            prev_wa_price=sec.get("PREVWAPRICE"),
-            prev_legal_close_price=sec.get("PREVLEGALCLOSEPRICE"),
+            last_price=sec.get("PREVPRICE"),
             open_price=open_price,
             high_price=high_price,
             low_price=low_price,
@@ -111,10 +108,9 @@ class SharesService:
         LAST -> WAPRICE для последней цены.
         """
         if not md:
-            return None, None, None, None
+            return None, None, None
 
         return (
-            md.get("LAST") or md.get("WAPRICE"),  # последняя цена
             md.get("OPEN"),  # цена открытия
             md.get("HIGH"),  # максимум дня
             md.get("LOW"),  # минимум дня
