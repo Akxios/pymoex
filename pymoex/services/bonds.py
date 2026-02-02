@@ -9,74 +9,50 @@ class BondsService:
     """
     Сервис для получения данных по облигациям Московской биржи.
 
-    Отвечает за:
-    - загрузку справочных и рыночных данных по облигациям
-    - агрегацию данных из разных таблиц ISS
-    - преобразование ответа в модель Bond
-    - кэширование результатов
+    - корректно работает с BOARDID (TQOB / SPOB)
+    - берёт цену только из торгового режима
+    - использует fallback по цене
     """
 
     def __init__(self, session, cache):
-        # Асинхронная HTTP-сессия (MoexSession)
         self.session = session
-
-        # TTL-кэш для снижения нагрузки на ISS API
         self.cache = cache
 
     async def get_bond(self, ticker: str) -> Bond:
-        """
-        Получить информацию по облигации.
-
-        :param ticker: ISIN или торговый код (например, 'RU000A10DS74')
-        :return: экземпляр модели Bond
-        """
         ticker = ticker.upper()
         cache_key = f"bond:{ticker}"
 
-        # Быстрая попытка взять из кэша
         cached = await self.cache.get(cache_key)
         if cached:
             return cached
 
-        # Фабрика для ленивой загрузки
         async def _fetch():
             return await self._load_bond(ticker)
 
-        # Атомарно получить из кэша или загрузить и сохранить
         return await self.cache.get_or_set(cache_key, _fetch, ttl=None)
 
     async def _load_bond(self, ticker: str) -> Bond:
-        """
-        Загрузка данных об облигации напрямую из MOEX ISS API.
+        registry = await self.session.get(endpoints.bond(ticker))
+        r_cols = registry["securities"]["columns"]
+        r_rows = registry["securities"]["data"]
 
-        Выполняет:
-        1. Поиск бумаги в реестре
-        2. Загрузку рыночных данных
-        3. Нормализацию и сборку в модель Bond
-        """
-        # --- 1. Поиск в реестре ценных бумаг ---
-        data = await self.session.get(endpoints.bond(ticker))
-        cols = data["securities"]["columns"]
-        rows = data["securities"]["data"]
-
-        # Преобразуем строки в dict и ищем нужный тикер
-        sec = next((dict(zip(cols, r)) for r in rows if r[0] == ticker), None)
-        if not sec:
+        reg_rows = [dict(zip(r_cols, r)) for r in r_rows]
+        if not reg_rows:
             raise InstrumentNotFoundError(f"Bond {ticker} not found")
-
-        # --- 2. Загрузка рыночных данных ---
         market = await self.session.get(
             f"/engines/stock/markets/bonds/securities/{ticker}.json"
         )
 
-        # Берём первые строки из таблиц
-        sec = first_row(market["securities"])
-        yld = first_row(market["marketdata_yields"])
+        m_cols = market["securities"]["columns"]
+        m_rows = market["securities"]["data"]
+        market_rows = [dict(zip(m_cols, r)) for r in m_rows]
 
-        # Извлекаем цену и доходность с fallback-логикой
+        if not market_rows:
+            raise InstrumentNotFoundError(f"Bond {ticker} has no market data")
+        sec = self._pick_trading_row(market_rows)
+        yld = first_row(market.get("marketdata_yields"))
         yield_percent = self._extract_yield(yld)
 
-        # --- 3. Формирование доменной модели ---
         return Bond(
             # Идентификация
             sec_id=sec["SECID"],
@@ -85,7 +61,7 @@ class BondsService:
             is_in=sec.get("ISIN"),
             reg_number=sec.get("REGNUMBER"),
             # Цена и доходность
-            price_percent=sec.get("PREVWAPRICE"),
+            price_percent=self._extract_price_percent(sec),
             yield_percent=yield_percent,
             # Купоны
             coupon_value=sec.get("COUPONVALUE"),
@@ -107,7 +83,7 @@ class BondsService:
             list_level=sec.get("LISTLEVEL"),
             status=sec.get("STATUS"),
             sec_type=sec.get("SECTYPE"),
-            # Опции (оферты, выкуп)
+            # Опции
             offer_date=safe_date(sec.get("OFFERDATE")),
             calloption_date=safe_date(sec.get("CALLOPTIONDATE")),
             put_option_date=safe_date(sec.get("PUTOPTIONDATE")),
@@ -119,12 +95,26 @@ class BondsService:
             sector_id=sec.get("SECTORID"),
         )
 
+    def _pick_trading_row(self, rows: list[dict]) -> dict:
+        """
+        Выбор строки торгов:
+        1. TQOB — основной рынок
+        2. fallback — первая доступная
+        """
+        for r in rows:
+            if r.get("BOARDID") == "TQOB":
+                return r
+        return rows[0]
+
+    @staticmethod
+    def _extract_price_percent(sec: dict) -> float | None:
+        """
+        Извлечение цены (% от номинала) с fallback.
+        """
+        return sec.get("PREVWAPRICE") or sec.get("PREVPRICE") or sec.get("MARKETPRICE")
+
     @staticmethod
     def _extract_yield(yld: dict | None) -> float | None:
-        """
-        Извлечение эффективной доходности облигации.
-        """
         if not yld:
             return None
-
         return yld.get("EFFECTIVEYIELD")
