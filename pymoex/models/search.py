@@ -1,5 +1,6 @@
-from pydantic import BaseModel
 from typing import Optional
+
+from pydantic import BaseModel
 
 
 class SearchResult(BaseModel):
@@ -45,16 +46,16 @@ class SearchResult(BaseModel):
         return self.__repr__()
 
     # --- Идентификация ---
-    secid: str                 # торговый код / ISIN
-    shortname: str             # краткое название
-    name: str                  # полное наименование
+    secid: str  # торговый код / ISIN
+    shortname: str  # краткое название
+    name: str  # полное наименование
 
     isin: Optional[str] = None
     regnumber: Optional[str] = None
 
     # --- Тип и рынок ---
-    type: Optional[str] = None     # тип бумаги (common_share, corporate_bond и т.п.)
-    group: Optional[str] = None    # группа рынка (stock_shares, stock_bonds, options)
+    type: Optional[str] = None  # тип бумаги (common_share, corporate_bond и т.п.)
+    group: Optional[str] = None  # группа рынка (stock_shares, stock_bonds, options)
 
     # --- Торговые параметры ---
     is_traded: Optional[bool] = None
