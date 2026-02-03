@@ -37,7 +37,7 @@ class Share(BaseModel):
     sec_id: str  # торговый код
     short_name: str  # краткое название
     sec_name: Optional[str] = None
-    is_in: Optional[str] = None  # ISIN
+    isin: Optional[str] = None  # ISIN
     reg_number: Optional[str] = None
 
     # --- Цены и торговые параметры ---
