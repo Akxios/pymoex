@@ -22,7 +22,7 @@ class Bond(BaseModel):
 
     model_config = ConfigDict(
         populate_by_name=True,  # принимать sec_id и SECID
-        extra="ignore",  # MOEX любит лишние поля
+        extra="ignore",  # MOEX любит лишние поля (тут главное не плакать)
     )
 
     def __repr__(self) -> str:
