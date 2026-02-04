@@ -1,97 +1,129 @@
 from datetime import date
 from typing import Optional
 
-from pydantic import BaseModel, ConfigDict, Field, computed_field
+from pydantic import Field, computed_field
+
+from .base import BaseInstrument
 
 
-class Share(BaseModel):
+class Share(BaseInstrument):
     """
-    Модель акции Московской биржи.
+    Акция Московской биржи.
 
     Содержит:
     - идентификационные данные
     - текущие и исторические цены
     - параметры торгов
     - информацию о листинге и классификации
+
+    Пример:
+        Share(SECID="SBER", SHORTNAME="Сбербанк", LAST=250.5)
     """
 
-    model_config = ConfigDict(
-        populate_by_name=True,  # принимать sec_id и SECID
-        extra="ignore",  # MOEX любит лишние поля (тут главное не плакать)
+    # --- Идентификация ---
+    sec_id: str = Field(alias="SECID", description="Торговый код инструмента (SECID)")
+    short_name: str = Field(
+        alias="SHORTNAME", description="Краткое название инструмента"
+    )
+    sec_name: Optional[str] = Field(
+        None, alias="SECNAME", description="Полное официальное наименование"
+    )
+    isin: Optional[str] = Field(
+        None,
+        alias="ISIN",
+        description="Международный идентификатор ценной бумаги (ISIN)",
+    )
+    reg_number: Optional[str] = Field(
+        None, alias="REGNUMBER", description="Регистрационный номер бумаги"
     )
 
-    def __repr__(self) -> str:
-        """
-        Короткое человекочитаемое представление акции
-        для логов, консоли и отладки.
-        """
-        parts = [self.sec_id]
+    # --- Цены ---
+    prev_price: Optional[float] = Field(
+        None, alias="PREVPRICE", description="Предыдущая цена"
+    )
+    prev_weighted_price: Optional[float] = Field(
+        None, alias="PREVWAPRICE", description="Предыдущая средневзвешенная цена"
+    )
+    prev_close_price: Optional[float] = Field(
+        None,
+        alias="PREVLEGALCLOSEPRICE",
+        description="Официальная цена закрытия предыдущего дня",
+    )
+    close_price: Optional[float] = Field(
+        None, alias="CLOSEPRICE", description="Цена закрытия"
+    )
 
-        if self.short_name:
-            parts.append(self.short_name)
+    last_price: Optional[float] = Field(
+        None, alias="LAST", description="Последняя цена сделки"
+    )
+    open_price: Optional[float] = Field(None, alias="OPEN", description="Цена открытия")
+    high_price: Optional[float] = Field(
+        None, alias="HIGH", description="Максимальная цена"
+    )
+    low_price: Optional[float] = Field(
+        None, alias="LOW", description="Минимальная цена"
+    )
 
-        if self.last_price is not None:
-            parts.append(f"price={self.last_price}")
+    # --- Параметры ---
+    currency_id: Optional[str] = Field(
+        None, alias="CURRENCYID", description="Валюта торгов"
+    )
+    min_step: Optional[float] = Field(None, alias="MINSTEP", description="Шаг цены")
+    decimals: Optional[int] = Field(
+        None, alias="DECIMALS", description="Знаков после запятой"
+    )
+    settle_date: Optional[date] = Field(
+        None, alias="SETTLEDATE", description="Дата расчёта"
+    )
 
-        return f"<Share {' | '.join(parts)}>"
+    lot_size: Optional[int] = Field(
+        None, alias="LOTSIZE", description="Размер лота (бумаг)"
+    )
+    face_value: Optional[float] = Field(
+        None, alias="FACEVALUE", description="Номинальная стоимость бумаги"
+    )
+    issue_size: Optional[int] = Field(
+        None, alias="ISSUESIZE", description="Объём эмиссии"
+    )
 
-    # def __str__(self) -> str:
-    # return self.__repr__()
+    # --- Статус ---
+    status: Optional[str] = Field(
+        None, alias="STATUS", description="Статус инструмента"
+    )
+    list_level: Optional[int] = Field(
+        None, alias="LISTLEVEL", description="Уровень листинга"
+    )
+    sec_type: Optional[str] = Field(None, alias="SECTYPE", description="Тип бумаги")
 
-    # --- Идентификация ---
-    sec_id: str = Field(alias="SECID")  # торговый код
-    short_name: str = Field(alias="SHORTNAME")  # краткое название
-    sec_name: Optional[str] = Field(None, alias="SECNAME")
-    isin: Optional[str] = Field(None, alias="ISIN")  # ISIN
-    reg_number: Optional[str] = Field(None, alias="REGNUMBER")
+    # --- Рынок ---
+    board_id: Optional[str] = Field(None, alias="BOARDID", description="Код площадки")
+    board_name: Optional[str] = Field(
+        None, alias="BOARDNAME", description="Название площадки"
+    )
+    sector_id: Optional[str] = Field(None, alias="SECTORID", description="Сектор")
+    market_code: Optional[str] = Field(
+        None, alias="MARKETCODE", description="Код рынка"
+    )
+    instr_id: Optional[str] = Field(None, alias="INSTRID", description="ID инструмента")
 
-    # --- Цены и торговые параметры ---
-    prev_price: Optional[float] = Field(None, alias="PREVPRICE")
-    prev_weighted_price: Optional[float] = Field(None, alias="PREVWAPRICE")
-    prev_close_price: Optional[float] = Field(None, alias="PREVLEGALCLOSEPRICE")
-    close_price: Optional[float] = Field(None, alias="CLOSEPRICE")
-
-    last_price: Optional[float] = Field(None, alias="LAST")
-    open_price: Optional[float] = Field(None, alias="OPEN")
-    high_price: Optional[float] = Field(None, alias="HIGH")
-    low_price: Optional[float] = Field(None, alias="LOW")
-
-    # --- Валюта и шаг цены ---
-    currency_id: Optional[str] = Field(None, alias="CURRENCYID")
-    min_step: Optional[float] = Field(None, alias="MINSTEP")
-    decimals: Optional[int] = Field(None, alias="DECIMALS")
-    settle_date: Optional[date] = Field(None, alias="SETTLEDATE")
-
-    # --- Лоты и объём выпуска ---
-    lot_size: Optional[int] = Field(None, alias="LOTSIZE")
-    face_value: Optional[float] = Field(None, alias="FACEVALUE")
-    issue_size: Optional[int] = Field(None, alias="ISSUESIZE")
-
-    # --- Статус и листинг ---
-    status: Optional[str] = Field(None, alias="STATUS")
-    list_level: Optional[int] = Field(None, alias="LISTLEVEL")
-    sec_type: Optional[str] = Field(None, alias="SECTYPE")
-
-    # --- Классификация и рынок ---
-    board_id: Optional[str] = Field(None, alias="BOARDID")
-    board_name: Optional[str] = Field(None, alias="BOARDNAME")
-    sector_id: Optional[str] = Field(None, alias="SECTORID")
-    market_code: Optional[str] = Field(None, alias="MARKETCODE")
-    instr_id: Optional[str] = Field(None, alias="INSTRID")
-
+    # --- Computed ---
     @computed_field
     @property
     def reference_price(self) -> Optional[float]:
-        """
-        Базовая цена для сравнения и расчёта изменений.
-        """
+        """Базовая цена для сравнения."""
         return self.prev_weighted_price or self.prev_price
 
     @computed_field
     @property
     def effective_close(self) -> Optional[float]:
-        """
-        Цена закрытия: сегодняшняя, если сессия завершена,
-        иначе — вчерашняя официальная.
-        """
+        """Фактическая цена закрытия."""
         return self.close_price or self.prev_close_price
+
+    # --- Repr ---
+    def __repr__(self) -> str:
+        parts = [self.sec_id]
+        if self.short_name:
+            parts.append(self.short_name)
+        if self.last_price is not None:
+            parts.append(f"price={self.last_price}")
+        return f"<Share {' | '.join(parts)}>"
