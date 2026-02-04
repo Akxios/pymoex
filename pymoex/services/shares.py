@@ -56,50 +56,31 @@ class SharesService:
             raise InstrumentNotFoundError(f"Share {ticker} not found")
 
         # Таблица securities -> список словарей
-        sec = parse_table(data["securities"])[0]
+        sec_list = parse_table(data["securities"])
+
+        sec = next(
+            (r for r in sec_list if r.get("BOARDID") == "TQBR"),
+            sec_list[0],  # fallback
+        )
 
         # Таблица marketdata может содержать данные по нескольким бордам
         md_list = parse_table(data.get("marketdata", {}))
 
-        # Выбираем основную торговую площадку (обычно TQBR)
+        # Выбираем основную торговую площадку
         md = next((r for r in md_list if r.get("BOARDID") == "TQBR"), None)
 
         # Извлекаем цены с fallback-логикой
-        open_price, high_price, low_price = self._extract_prices(md)
+        last_price, open_price, high_price, low_price = self._extract_prices(md)
 
-        # Формируем доменную модель
-        return Share(
-            # --- Идентификация ---
-            sec_id=sec["SECID"],
-            short_name=sec["SHORTNAME"],
-            sec_name=sec.get("SECNAME"),
-            is_in=sec.get("ISIN"),
-            reg_number=sec.get("REGNUMBER"),
-            # --- Цены и торговля ---
-            last_price=sec.get("PREVPRICE"),
-            open_price=open_price,
-            high_price=high_price,
-            low_price=low_price,
-            # --- Валюта и шаг цены ---
-            currency_id=sec.get("CURRENCYID"),
-            min_step=sec.get("MINSTEP"),
-            decimals=sec.get("DECIMALS"),
-            settle_date=sec.get("SETTLEDATE"),
-            # --- Лоты и объём выпуска ---
-            lot_size=sec.get("LOTSIZE"),
-            face_value=sec.get("FACEVALUE"),
-            issue_size=sec.get("ISSUESIZE"),
-            # --- Статус и листинг ---
-            status=sec.get("STATUS"),
-            list_level=sec.get("LISTLEVEL"),
-            sec_type=sec.get("SECTYPE"),
-            # --- Классификация и рынок ---
-            board_id=md.get("BOARDID") if md else sec.get("BOARDID"),
-            board_name=md.get("BOARDNAME") if md else sec.get("BOARDNAME"),
-            sector_id=sec.get("SECTORID"),
-            market_code=sec.get("MARKETCODE"),
-            instr_id=sec.get("INSTRID"),
-        )
+        data = {
+            **sec,
+            "last_price": last_price,
+            "open_price": open_price,
+            "high_price": high_price,
+            "low_price": low_price,
+        }
+
+        return Share.model_validate(data)
 
     @staticmethod
     def _extract_prices(md: dict | None):
@@ -108,9 +89,10 @@ class SharesService:
         LAST -> WAPRICE для последней цены.
         """
         if not md:
-            return None, None, None
+            return None, None, None, None
 
         return (
+            md.get("LAST") or md.get("WAPRICE"),  # последняя цена
             md.get("OPEN"),  # цена открытия
             md.get("HIGH"),  # максимум дня
             md.get("LOW"),  # минимум дня
