@@ -26,7 +26,7 @@ class Share(BaseInstrument):
         alias="SHORTNAME", description="Краткое название инструмента"
     )
     sec_name: Optional[str] = Field(
-        None, alias="SECNAME", description="Полное официальное наименование"
+        None, alias="SECNAME", description="Полное официальное наименование акции"
     )
     isin: Optional[str] = Field(
         None,
@@ -34,7 +34,7 @@ class Share(BaseInstrument):
         description="Международный идентификатор ценной бумаги (ISIN)",
     )
     reg_number: Optional[str] = Field(
-        None, alias="REGNUMBER", description="Регистрационный номер бумаги"
+        None, alias="REGNUMBER", description="Регистрационный номер бумаги акции"
     )
 
     # --- Цены ---
@@ -80,7 +80,9 @@ class Share(BaseInstrument):
         None, alias="LOTSIZE", description="Размер лота (бумаг)"
     )
     face_value: Optional[float] = Field(
-        None, alias="FACEVALUE", description="Номинальная стоимость бумаги"
+        None,
+        alias="FACEVALUE",
+        description="Номинальная стоимость одной облигации акции",
     )
     issue_size: Optional[int] = Field(
         None, alias="ISSUESIZE", description="Объём эмиссии"
@@ -91,16 +93,20 @@ class Share(BaseInstrument):
         None, alias="STATUS", description="Статус инструмента"
     )
     list_level: Optional[int] = Field(
-        None, alias="LISTLEVEL", description="Уровень листинга"
+        None, alias="LISTLEVEL", description="Уровень листинга на бирже"
     )
-    sec_type: Optional[str] = Field(None, alias="SECTYPE", description="Тип бумаги")
+    sec_type: Optional[str] = Field(
+        None, alias="SECTYPE", description="Тип ценной бумаги"
+    )
 
     # --- Рынок ---
     board_id: Optional[str] = Field(None, alias="BOARDID", description="Код площадки")
     board_name: Optional[str] = Field(
         None, alias="BOARDNAME", description="Название площадки"
     )
-    sector_id: Optional[str] = Field(None, alias="SECTORID", description="Сектор")
+    sector_id: Optional[str] = Field(
+        None, alias="SECTORID", description="Идентификатор сектора экономики"
+    )
     market_code: Optional[str] = Field(
         None, alias="MARKETCODE", description="Код рынка"
     )
@@ -122,10 +128,13 @@ class Share(BaseInstrument):
     # --- Repr ---
     def __repr__(self) -> str:
         parts = [self.sec_id]
+
         if self.short_name:
             parts.append(self.short_name)
+
         if self.last_price is not None:
             parts.append(f"price={self.last_price}")
+
         return f"<Share {' | '.join(parts)}>"
 
 
