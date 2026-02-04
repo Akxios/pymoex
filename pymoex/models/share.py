@@ -127,3 +127,6 @@ class Share(BaseInstrument):
         if self.last_price is not None:
             parts.append(f"price={self.last_price}")
         return f"<Share {' | '.join(parts)}>"
+
+
+__all__ = ["Share"]
