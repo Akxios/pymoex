@@ -41,10 +41,14 @@ class Bond(BaseInstrument):
 
     # --- Рыночные показатели ---
     price_percent: MoexDecimal = Field(
-        None, description="Цена облигации в процентах от номинала (clean price, %)"
+        None,
+        alias="LAST",
+        description="Цена облигации в процентах от номинала (clean price, %)",
     )
     effective_yield: MoexDecimal = Field(
-        None, description="Эффективная доходность облигации, % годовых"
+        None,
+        alias="EFFECTIVEYIELD",
+        description="Эффективная доходность облигации, % годовых",
     )
 
     # --- Купонные параметры ---
@@ -138,6 +142,7 @@ class Bond(BaseInstrument):
     sector_id: Optional[str] = Field(
         None, alias="SECTORID", description="Идентификатор сектора экономики"
     )
+    board_id: Optional[str] = Field(None, alias="BOARDID", description="Код площадки")
 
     # --- Computed ---
     @computed_field
