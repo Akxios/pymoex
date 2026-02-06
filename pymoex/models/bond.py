@@ -169,7 +169,7 @@ class Bond(BaseInstrument):
             parts.append(self.short_name)
 
         if self.last_price is not None:
-            parts.append(f"price={self.last_price}₽")
+            parts.append(f"price={self.last_price}")
 
         if self.effective_yield is not None:
             parts.append(f"yield={self.effective_yield:.2f}%")
