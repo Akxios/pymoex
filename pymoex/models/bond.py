@@ -1,9 +1,8 @@
-from datetime import date
+from decimal import Decimal
 from typing import Optional
 
-from pydantic import Field, computed_field, field_validator
-
-from pymoex.utils.types import safe_date
+from pydantic import Field, computed_field
+from utils.types import MoexDate, MoexDecimal, MoexInt
 
 from .base import BaseInstrument
 
@@ -40,49 +39,49 @@ class Bond(BaseInstrument):
         None, alias="REGNUMBER", description="Регистрационный номер выпуска облигации"
     )
 
-    # --- Рыночные показатели (рассчитываются сервисом) ---
-    price_percent: Optional[float] = Field(
+    # --- Рыночные показатели ---
+    price_percent: MoexDecimal = Field(
         None, description="Цена облигации в процентах от номинала (clean price, %)"
     )
-    effective_yield: Optional[float] = Field(
+    effective_yield: MoexDecimal = Field(
         None, description="Эффективная доходность облигации, % годовых"
     )
 
     # --- Купонные параметры ---
-    coupon_value: Optional[float] = Field(
+    coupon_value: MoexDecimal = Field(
         None, alias="COUPONVALUE", description="Размер купона в валюте номинала"
     )
-    coupon_percent: Optional[float] = Field(
+    coupon_percent: MoexDecimal = Field(
         None, alias="COUPONPERCENT", description="Размер купона в процентах от номинала"
     )
-    accruedint: Optional[float] = Field(
+    accruedint: MoexDecimal = Field(
         None, alias="ACCRUEDINT", description="Накопленный купонный доход (НКД)"
     )
-    next_coupon: Optional[date] = Field(
+    next_coupon: MoexDate = Field(
         None, alias="NEXTCOUPON", description="Дата выплаты следующего купона"
     )
 
     # --- Сроки обращения ---
-    mat_date: Optional[date] = Field(
+    mat_date: MoexDate = Field(
         None, alias="MATDATE", description="Дата погашения облигации"
     )
-    coupon_period: Optional[int] = Field(
+    coupon_period: MoexInt = Field(
         None, alias="COUPONPERIOD", description="Периодичность выплаты купона в днях"
     )
-    date_yield_from_issuer: Optional[date] = Field(
+    date_yield_from_issuer: MoexDate = Field(
         None,
         alias="DATEYIELDFROMISSUER",
         description="Дата начала расчёта доходности по данным эмитента",
     )
 
     # --- Номинал и расчёт лотов ---
-    face_value: Optional[float] = Field(
+    face_value: MoexDecimal = Field(
         None, alias="FACEVALUE", description="Номинальная стоимость одной облигации"
     )
-    lot_size: Optional[int] = Field(
+    lot_size: MoexInt = Field(
         None, alias="LOTSIZE", description="Количество облигаций в одном торговом лоте"
     )
-    lot_value: Optional[float] = Field(
+    lot_value: MoexDecimal = Field(
         None, alias="LOTVALUE", description="Стоимость одного лота в валюте номинала"
     )
     face_unit: Optional[str] = Field(
@@ -93,10 +92,10 @@ class Bond(BaseInstrument):
     )
 
     # --- Ликвидность и листинг ---
-    issue_size_placed: Optional[int] = Field(
+    issue_size_placed: MoexInt = Field(
         None, alias="ISSUESIZEPLACED", description="Количество размещённых облигаций"
     )
-    list_level: Optional[int] = Field(
+    list_level: MoexInt = Field(
         None, alias="LISTLEVEL", description="Уровень листинга на бирже"
     )
     status: Optional[str] = Field(
@@ -109,23 +108,23 @@ class Bond(BaseInstrument):
     )
 
     # --- Опции: оферты, выкуп ---
-    offer_date: Optional[date] = Field(
+    offer_date: MoexDate = Field(
         None, alias="OFFERDATE", description="Дата оферты по облигации"
     )
-    call_option_date: Optional[date] = Field(
+    call_option_date: MoexDate = Field(
         None,
         alias="CALLOPTIONDATE",
         description="Дата колл-опциона (право эмитента на выкуп)",
     )
-    put_option_date: Optional[date] = Field(
+    put_option_date: MoexDate = Field(
         None,
         alias="PUTOPTIONDATE",
         description="Дата пут-опциона (право держателя продать облигацию)",
     )
-    buyback_date: Optional[date] = Field(
+    buyback_date: MoexDate = Field(
         None, alias="BUYBACKDATE", description="Дата выкупа облигации"
     )
-    buyback_price: Optional[float] = Field(
+    buyback_price: MoexDecimal = Field(
         None, alias="BUYBACKPRICE", description="Цена выкупа облигации"
     )
 
@@ -140,58 +139,26 @@ class Bond(BaseInstrument):
         None, alias="SECTORID", description="Идентификатор сектора экономики"
     )
 
-    # --- Валидация дат ---
-    @field_validator(
-        "next_coupon",
-        "mat_date",
-        "date_yield_from_issuer",
-        "offer_date",
-        "call_option_date",
-        "put_option_date",
-        "buyback_date",
-        mode="before",
-    )
-    @classmethod
-    def parse_moex_date(cls, value):
-        return safe_date(value)
-
-    # --- Валидация чисел ---
-    @field_validator(
-        "price_percent",
-        "effective_yield",
-        "coupon_value",
-        "coupon_percent",
-        "accruedint",
-        "face_value",
-        "buyback_price",
-        mode="before",
-    )
-    @classmethod
-    def parse_optional_float(cls, value):
-        if value in (None, "", "—"):
-            return None
-        try:
-            return float(value)
-        except (TypeError, ValueError):
-            return None
-
     # --- Computed ---
     @computed_field
     @property
-    def last_price(self) -> Optional[float]:
-        """Последняя чистая цена облигации (без НКД) в валюте номинала."""
+    def last_price(self) -> Optional[Decimal]:
+        """Последняя чистая цена в валюте (Nominal * Price%)."""
         if self.price_percent is None or self.face_value is None:
             return None
-        return self.face_value * self.price_percent / 100
+
+        return self.face_value * self.price_percent / Decimal(100)
 
     @computed_field
     @property
-    def last_dirty_price(self) -> Optional[float]:
-        """Последняя полная цена облигации (clean price + НКД)."""
+    def last_dirty_price(self) -> Optional[Decimal]:
+        """Грязная цена (Clean Price + НКД)."""
         clean = self.last_price
+
         if clean is None:
             return None
-        return clean + (self.accruedint or 0)
+
+        return clean + (self.accruedint or Decimal(0))
 
     # --- Repr ---
     def __repr__(self) -> str:
@@ -202,10 +169,10 @@ class Bond(BaseInstrument):
             parts.append(self.short_name)
 
         if self.last_price is not None:
-            parts.append(f"price={self.last_price}")
+            parts.append(f"price={self.last_price}₽")
 
         if self.effective_yield is not None:
-            parts.append(f"yield={self.effective_yield}%")
+            parts.append(f"yield={self.effective_yield:.2f}%")
 
         return f"<Bond {' | '.join(parts)}>"
 
