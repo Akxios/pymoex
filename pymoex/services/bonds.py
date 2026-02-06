@@ -1,16 +1,12 @@
 from pymoex.core import endpoints
 from pymoex.exceptions import InstrumentNotFoundError
 from pymoex.models.bond import Bond
-from pymoex.utils.table import first_row
+from pymoex.utils.table import parse_table
 
 
 class BondsService:
     """
-    Сервис для получения данных по облигациям Московской биржи.
-
-    - корректно работает с BOARDID (TQOB / SPOB)
-    - берёт цену только из торгового режима
-    - использует fallback по цене
+    Сервис для получения данных по облигациям.
     """
 
     def __init__(self, session, cache):
@@ -21,62 +17,52 @@ class BondsService:
         ticker = ticker.upper()
         cache_key = f"bond:{ticker}"
 
-        cached = await self.cache.get(cache_key)
-        if cached:
-            return cached
-
         async def _fetch():
             return await self._load_bond(ticker)
 
-        return await self.cache.get_or_set(cache_key, _fetch, ttl=None)
+        return await self.cache.get_or_set(cache_key, _fetch, ttl=60)
 
     async def _load_bond(self, ticker: str) -> Bond:
-        registry = await self.session.get(endpoints.bond(ticker))
-        r_cols = registry["securities"]["columns"]
-        r_rows = registry["securities"]["data"]
+        data = await self.session.get(endpoints.bond(ticker))
 
-        reg_rows = [dict(zip(r_cols, r)) for r in r_rows]
-        if not reg_rows:
+        if not data.get("securities", {}).get("data"):
             raise InstrumentNotFoundError(f"Bond {ticker} not found")
-        market = await self.session.get(
-            f"/engines/stock/markets/bonds/securities/{ticker}.json"
+
+        # 1. Парсим таблицы
+        sec_rows = parse_table(data["securities"])
+
+        md_rows = parse_table(data.get("marketdata", {}))
+        yield_rows = parse_table(data.get("marketdata_yields", {}))
+
+        # Если тикер не найден или ошибочен, sec_rows может быть пустым
+        if not sec_rows:
+            raise InstrumentNotFoundError(
+                f"Bond {ticker} not found in securities table"
+            )
+
+        primary_boards = {"TQOB", "TQCB", "TQOD", "TQIR"}
+
+        # 2. Ищем лучшую запись в securities
+        security = next(
+            (row for row in sec_rows if row.get("BOARDID") in primary_boards),
+            sec_rows[0],
         )
 
-        m_cols = market["securities"]["columns"]
-        m_rows = market["securities"]["data"]
-        market_rows = [dict(zip(m_cols, r)) for r in m_rows]
+        # Запоминаем, какой board_id мы выбрали
+        target_board = security.get("BOARDID")
 
-        if not market_rows:
-            raise InstrumentNotFoundError(f"Bond {ticker} has no market data")
+        # 3. Ищем соответствующие рыночные данные для этого же борда
+        market_data = next(
+            (row for row in md_rows if row.get("BOARDID") == target_board), {}
+        )
 
-        sec = self._pick_trading_row(market_rows)
-        yld = first_row(market.get("marketdata_yields"))
-        effective_yield = yld.get("EFFECTIVEYIELD") if yld else None
+        yield_data = next(
+            (row for row in yield_rows if row.get("BOARDID") == target_board), {}
+        )
 
-        price_percent = self._extract_price_percent(sec)
+        # 4. Объединяем данные
+        # Объединяем все три источника.
+        combined_data = {**security, **market_data, **yield_data}
 
-        data = {
-            **sec,
-            "price_percent": price_percent,
-            "effective_yield": effective_yield,
-        }
-
-        return Bond.model_validate(data)
-
-    def _pick_trading_row(self, rows: list[dict]) -> dict:
-        """
-        Выбор строки торгов:
-        1. TQOB — основной рынок
-        2. fallback — первая доступная
-        """
-        for r in rows:
-            if r.get("BOARDID") == "TQOB":
-                return r
-        return rows[0]
-
-    @staticmethod
-    def _extract_price_percent(sec: dict) -> float | None:
-        """
-        Извлечение цены (% от номинала) с fallback.
-        """
-        return sec.get("PREVWAPRICE") or sec.get("PREVPRICE") or sec.get("MARKETPRICE")
+        # 5. Отдаем Pydantic
+        return Bond.model_validate(combined_data)
