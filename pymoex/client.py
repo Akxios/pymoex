@@ -4,7 +4,7 @@ from pymoex.core.cache import TTLCache
 from pymoex.core.session import MoexSession
 from pymoex.models.bond import Bond
 from pymoex.models.enums import InstrumentType
-from pymoex.models.search import SearchResult
+from pymoex.models.search import Search
 from pymoex.models.share import Share
 from pymoex.services.bonds import BondsService
 from pymoex.services.search import SearchService
@@ -73,7 +73,7 @@ class MoexClient:
 
     async def find(
         self, query: str, instrument_type: InstrumentType | str | None = None
-    ) -> list[SearchResult]:
+    ) -> list[Search]:
         """
         Поиск инструментов по строке.
 

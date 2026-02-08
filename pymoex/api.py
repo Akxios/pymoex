@@ -3,7 +3,7 @@ from typing import Awaitable, Callable, List, TypeVar
 
 from pymoex.client import MoexClient
 from pymoex.models.bond import Bond
-from pymoex.models.search import SearchResult
+from pymoex.models.search import Search
 from pymoex.models.share import Share
 
 T = TypeVar("T")
@@ -60,23 +60,23 @@ def get_bond(ticker: str) -> Bond:
     return _run_client_call(lambda c: c.bond(ticker))
 
 
-def find_shares(query: str) -> List[SearchResult]:
+def find_shares(query: str) -> List[Search]:
     """
     Синхронный поиск акций по строке.
 
     :param query: тикер, название, ISIN, эмитент
-    :return: список SearchResult
+    :return: список Search
     """
 
     return _run_client_call(lambda c: c.find_shares(query))
 
 
-def find_bonds(query: str) -> List[SearchResult]:
+def find_bonds(query: str) -> List[Search]:
     """
     Синхронный поиск облигаций по строке.
 
     :param query: тикер, название, ISIN, эмитент
-    :return: список SearchResult
+    :return: список Search
     """
 
     return _run_client_call(lambda c: c.find_bonds(query))
