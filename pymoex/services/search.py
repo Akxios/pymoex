@@ -1,18 +1,7 @@
 from pymoex.core import endpoints
+from pymoex.core.constants import MOEX_BOND_GROUPS, MOEX_FUND_GROUPS, MOEX_SHARE_GROUPS
 from pymoex.models.enums import InstrumentType
-from pymoex.models.search import SearchResult
-
-BOND_GROUP_PREFIXES = (
-    "stock_bond",
-    "stock_eurobond",
-    "stock_subfederal",
-    "stock_municipal",
-    "stock_corporate",
-)
-
-SHARE_GROUPS = {
-    "stock_shares",
-}
+from pymoex.models.search import Search
 
 
 class SearchService:
@@ -24,7 +13,7 @@ class SearchService:
         self,
         query: str,
         instrument_type: InstrumentType | str | None = None,
-    ) -> list[SearchResult]:
+    ) -> list[Search]:
         query_norm = query.strip().lower()
         itype = self._normalize_instrument_type(instrument_type)
 
@@ -36,42 +25,40 @@ class SearchService:
                 params={"q": query_norm, "limit": 1000},
             )
 
-            columns = data["securities"]["columns"]
-            rows = data["securities"]["data"]
+            # Безопасное получение колонок и данных
+            sec_data = data.get("securities", {})
+            columns = sec_data.get("columns", [])
+            rows = sec_data.get("data", [])
 
             raw = [dict(zip(columns, row)) for row in rows]
 
             raw = self._filter_by_type(raw, itype)
             raw = self._rank_results(raw, query_norm)
 
-            # убираем дубликаты по SECID
+            # Дедупликация (оставляем первого — самого релевантного)
             uniq = {}
             for r in raw:
-                secid = r.get("secid")
-                if secid:
-                    uniq[secid] = r
+                # В поиске ключи приходят в нижнем регистре: 'secid', 'group'
+                sid = r.get("secid")
+                if sid and sid.upper() not in uniq:
+                    uniq[sid.upper()] = r
 
-            return [SearchResult(**r) for r in uniq.values()]
+            return [Search(**r) for r in uniq.values()]
 
         return await self.cache.get_or_set(cache_key, _fetch)
 
     def _filter_by_type(
-        self,
-        raw: list[dict],
-        itype: InstrumentType | None,
+        self, raw: list[dict], itype: InstrumentType | None
     ) -> list[dict]:
         if itype is None:
             return raw
 
         if itype == InstrumentType.SHARE:
-            return [r for r in raw if r.get("group") in SHARE_GROUPS]
+            allowed = MOEX_SHARE_GROUPS | MOEX_FUND_GROUPS
+            return [r for r in raw if r.get("group") in allowed]
 
         if itype == InstrumentType.BOND:
-            return [
-                r
-                for r in raw
-                if isinstance(r.get("group"), str) and r["group"].startswith("stock_")
-            ]
+            return [r for r in raw if r.get("group") in MOEX_BOND_GROUPS]
 
         return raw
 
