@@ -1,68 +1,46 @@
 from typing import Optional
 
-from pydantic import BaseModel
+from pydantic import Field
+
+from .base import BaseInstrument
 
 
-class SearchResult(BaseModel):
+class Search(BaseInstrument):
     """
-    Результат поиска инструмента на Московской бирже.
-
-    Содержит базовую справочную информацию:
-    - идентификаторы (SECID, ISIN, регномер)
-    - тип и группу инструмента
-    - данные об эмитенте
-    - торговые площадки
+    Модель результата поиска
     """
+
+    # --- Идентификаторы ---
+    sec_id: str = Field(alias="secid", description="Тикер")
+    short_name: str = Field(alias="shortname", description="Краткое название")
+    name: Optional[str] = Field(None, alias="name", description="Полное название")
+    isin: Optional[str] = Field(None, alias="isin")
+    reg_number: Optional[str] = Field(
+        None, alias="regnumber", description="Рег. номер (для акций/облигаций)"
+    )
+
+    # --- Классификация ---
+    type: Optional[str] = Field(None, alias="type")
+    group: Optional[str] = Field(None, alias="group")
+
+    # --- Торговые данные ---
+    is_traded: Optional[bool] = Field(False, alias="is_traded")
+    primary_boardid: Optional[str] = Field(
+        None, alias="primary_boardid", description="Главный режим торгов"
+    )
+    marketprice_boardid: Optional[str] = Field(None, alias="marketprice_boardid")
+
+    # --- Эмитент (Компания) ---
+    emitent_id: Optional[int] = Field(None, alias="emitent_id")
+    emitent_title: Optional[str] = Field(
+        None, alias="emitent_title", description="Юридическое название эмитента"
+    )
+    emitent_inn: Optional[str] = Field(None, alias="emitent_inn")
+    emitent_okpo: Optional[str] = Field(None, alias="emitent_okpo")
 
     def __repr__(self) -> str:
-        """
-        Короткое человекочитаемое представление результата поиска.
-        Используется в логах, консоли и отладке.
-        """
-        # Определяем тип инструмента по группе
-        if self.group == "stock_bonds":
-            kind = "Bond"
-        elif self.group == "stock_shares":
-            kind = "Share"
-        elif self.group in {"options", "futures_options"}:
-            kind = "Option"
-        else:
-            kind = "Instrument"
+        status = "traded" if self.is_traded else "hidden"
+        return f"<Search {self.sec_id} | {self.short_name} | {self.group} | {status}>"
 
-        parts = [self.secid]
 
-        if self.shortname:
-            parts.append(self.shortname)
-
-        if self.emitent_title:
-            parts.append(self.emitent_title)
-
-        if self.is_traded is not None:
-            parts.append("traded" if self.is_traded else "not traded")
-
-        return f"<{kind} {' | '.join(parts)}>"
-
-    def __str__(self) -> str:
-        return self.__repr__()
-
-    # --- Идентификация ---
-    secid: str  # торговый код / ISIN
-    shortname: str  # краткое название
-    name: str  # полное наименование
-
-    isin: Optional[str] = None
-    regnumber: Optional[str] = None
-
-    # --- Тип и рынок ---
-    type: Optional[str] = None  # тип бумаги (common_share, corporate_bond и т.п.)
-    group: Optional[str] = None  # группа рынка (stock_shares, stock_bonds, options)
-
-    # --- Торговые параметры ---
-    is_traded: Optional[bool] = None
-    primary_boardid: Optional[str] = None
-    marketprice_boardid: Optional[str] = None
-
-    # --- Эмитент ---
-    emitent_id: Optional[int] = None
-    emitent_title: Optional[str] = None
-    emitent_inn: Optional[str] = None
+__all__ = ["Search"]
