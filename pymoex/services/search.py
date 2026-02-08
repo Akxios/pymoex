@@ -25,7 +25,6 @@ class SearchService:
                 params={"q": query_norm, "limit": 1000},
             )
 
-            # Безопасное получение колонок и данных
             sec_data = data.get("securities", {})
             columns = sec_data.get("columns", [])
             rows = sec_data.get("data", [])
@@ -35,10 +34,8 @@ class SearchService:
             raw = self._filter_by_type(raw, itype)
             raw = self._rank_results(raw, query_norm)
 
-            # Дедупликация (оставляем первого — самого релевантного)
             uniq = {}
             for r in raw:
-                # В поиске ключи приходят в нижнем регистре: 'secid', 'group'
                 sid = r.get("secid")
                 if sid and sid.upper() not in uniq:
                     uniq[sid.upper()] = r
