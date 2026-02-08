@@ -2,7 +2,8 @@ from decimal import Decimal
 from typing import Optional
 
 from pydantic import Field, computed_field
-from utils.types import MoexDate, MoexDecimal, MoexInt
+
+from pymoex.utils.types import MoexDate, MoexDecimal, MoexInt
 
 from .base import BaseInstrument
 
