@@ -1,8 +1,11 @@
+import logging
 from datetime import date
 from decimal import Decimal, InvalidOperation
 from typing import Annotated, Optional
 
 from pydantic import BeforeValidator
+
+logger = logging.getLogger(__name__)
 
 
 def safe_date(value: str | None) -> Optional[date]:
@@ -22,6 +25,7 @@ def safe_date(value: str | None) -> Optional[date]:
     try:
         return date.fromisoformat(value)
     except ValueError:
+        logger.warning(f"Failed to parse date: {value!r}")
         return None
 
 
