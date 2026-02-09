@@ -85,17 +85,24 @@ class SearchService:
             short = norm(r.get("shortname"))
             isin = norm(r.get("isin"))
 
+            full_name = norm(r.get("name"))
+
             if secid == q or isin == q:
                 return 100
+            if short == q:
+                return 90
             if q in secid:
                 return 80
             if q in short:
-                return 60
-            if all(p in short for p in q.split()):
-                return 50
-            return 10
+                return 70
+            if q in full_name:
+                return 65
+
+            return 0
 
         scored = [(score(r), r) for r in raw]
-        scored.sort(key=lambda x: x[0], reverse=True)
+        scored.sort(
+            key=lambda x: (x[0], -len(x[1].get("secid", "") or "")), reverse=True
+        )
 
-        return [r for s, r in scored if s > 20][:20]
+        return [r for s, r in scored if s > 0][:20]
