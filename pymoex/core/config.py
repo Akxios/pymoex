@@ -27,7 +27,10 @@ class MoexSettings(BaseSettings):
     timeout: int = 10
 
     # User-Agent для идентификации SDK
-    user_agent: str = "pymoex-sdk/0.1.1"
+    user_agent: str = "pymoex-sdk/0.1.4"
+
+    preferred_share_boards: list[str] = ["TQBR", "TQTF", "FQBR", "TQTD"]
+    preferred_bond_boards: list[str] = ["TQOB", "TQCB", "TQOD", "TQIR"]
 
     # Конфигурация pydantic-settings
     model_config = SettingsConfigDict(
