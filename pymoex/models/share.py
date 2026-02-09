@@ -62,11 +62,11 @@ class Share(BaseInstrument):
     high_price: MoexDecimal = Field(None, alias="HIGH", description="Максимальная цена")
     low_price: MoexDecimal = Field(None, alias="LOW", description="Минимальная цена")
 
-    # --- Объемы торгов (Важно для акций) ---
-    vol_today: MoexInt = Field(
+    # --- Объемы торгов ---
+    volume_today: MoexInt = Field(
         None, alias="VOLTODAY", description="Объем торгов в штуках"
     )
-    val_today: MoexDecimal = Field(
+    value_today: MoexDecimal = Field(
         None, alias="VALTODAY", description="Объем торгов в валюте (руб)"
     )
     num_trades: MoexInt = Field(

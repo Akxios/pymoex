@@ -1,7 +1,7 @@
 from decimal import Decimal
 from typing import Optional
 
-from pydantic import Field, computed_field
+from pydantic import Field, computed_field, model_validator
 
 from pymoex.utils.types import MoexDate, MoexDecimal, MoexInt
 
@@ -41,6 +41,20 @@ class Bond(BaseInstrument):
     )
 
     # --- Рыночные показатели ---
+    prev_price: MoexDecimal = Field(
+        None, alias="PREVPRICE", description="Предыдущая цена"
+    )
+    prev_weighted_price: MoexDecimal = Field(
+        None, alias="PREVWAPRICE", description="Предыдущая средневзвешенная цена"
+    )
+    prev_close_price: MoexDecimal = Field(
+        None,
+        alias="PREVLEGALCLOSEPRICE",
+        description="Официальная цена закрытия предыдущего дня",
+    )
+    close_price: MoexDecimal = Field(
+        None, alias="CLOSEPRICE", description="Цена закрытия"
+    )
     price_percent: MoexDecimal = Field(
         None,
         alias="LAST",
@@ -50,6 +64,20 @@ class Bond(BaseInstrument):
         None,
         alias="EFFECTIVEYIELD",
         description="Эффективная доходность облигации, % годовых",
+    )
+    open_price: MoexDecimal = Field(None, alias="OPEN", description="Цена открытия")
+    high_price: MoexDecimal = Field(None, alias="HIGH", description="Максимальная цена")
+    low_price: MoexDecimal = Field(None, alias="LOW", description="Минимальная цена")
+
+    # --- Объемы торгов ---
+    volume_today: MoexInt = Field(
+        None, alias="VOLTODAY", description="Объем торгов в штуках"
+    )
+    value_today: MoexDecimal = Field(
+        None, alias="VALTODAY", description="Объем торгов в валюте (руб)"
+    )
+    num_trades: MoexInt = Field(
+        None, alias="NUMTRADES", description="Количество сделок"
     )
 
     # --- Купонные параметры ---
@@ -111,6 +139,9 @@ class Bond(BaseInstrument):
     sec_type: Optional[str] = Field(
         None, alias="SECTYPE", description="Тип ценной бумаги"
     )
+    duration: Optional[int] = Field(
+        None, alias="DURATION", description="Дюрация, в днях"
+    )
 
     # --- Опции: оферты, выкуп ---
     offer_date: MoexDate = Field(
@@ -165,6 +196,22 @@ class Bond(BaseInstrument):
             return None
 
         return clean + (self.accruedint or Decimal(0))
+
+    # --- Validator ---
+    @model_validator(mode="before")
+    @classmethod
+    def fix_missing_prices(cls, data: dict):
+        """
+        Если нет цены сделки (LAST), ищем цену закрытия или предыдущего дня.
+        """
+
+        if not data.get("LAST"):
+            data["LAST"] = data.get("PREVLEGALCLOSEPRICE") or data.get("PREVWAPRICE")
+
+        if not data.get("EFFECTIVEYIELD"):
+            data["EFFECTIVEYIELD"] = data.get("YIELD")
+
+        return data
 
     # --- Repr ---
     def __repr__(self) -> str:
