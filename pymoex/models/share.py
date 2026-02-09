@@ -28,15 +28,14 @@ class Share(BaseInstrument):
         alias="SHORTNAME", description="Краткое название инструмента"
     )
     name: Optional[str] = Field(
-        None, alias="SECNAME", description="Полное официальное наименование акции"
+        alias="SECNAME", description="Полное официальное наименование акции"
     )
     isin: Optional[str] = Field(
-        None,
         alias="ISIN",
         description="Международный идентификатор ценной бумаги (ISIN)",
     )
     reg_number: Optional[str] = Field(
-        None, alias="REGNUMBER", description="Регистрационный номер бумаги акции"
+        alias="REGNUMBER", description="Регистрационный номер бумаги акции"
     )
 
     # --- Цены ---

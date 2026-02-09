@@ -29,15 +29,14 @@ class Bond(BaseInstrument):
     )
     short_name: str = Field(alias="SHORTNAME", description="Краткое название облигации")
     name: Optional[str] = Field(
-        None, alias="SECNAME", description="Полное официальное наименование облигации"
+        alias="SECNAME", description="Полное официальное наименование облигации"
     )
     isin: Optional[str] = Field(
-        None,
         alias="ISIN",
         description="Международный идентификатор ценной бумаги (ISIN)",
     )
     reg_number: Optional[str] = Field(
-        None, alias="REGNUMBER", description="Регистрационный номер выпуска облигации"
+        alias="REGNUMBER", description="Регистрационный номер выпуска облигации"
     )
 
     # --- Рыночные показатели ---
