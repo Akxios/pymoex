@@ -27,7 +27,7 @@ class Share(BaseInstrument):
     short_name: str = Field(
         alias="SHORTNAME", description="Краткое название инструмента"
     )
-    sec_name: Optional[str] = Field(
+    name: Optional[str] = Field(
         None, alias="SECNAME", description="Полное официальное наименование акции"
     )
     isin: Optional[str] = Field(
