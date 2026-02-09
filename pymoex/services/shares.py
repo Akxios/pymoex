@@ -28,26 +28,50 @@ class SharesService:
         if not data.get("securities", {}).get("data"):
             raise InstrumentNotFoundError(f"Share {ticker} not found")
 
-        # 1. Парсим таблицы
         sec_rows = parse_table(data["securities"])
         md_rows = parse_table(data.get("marketdata", {}))
 
-        # 2. Ищем лучшую запись в securities (Приоритет: TQBR -> Первая попавшаяся)
+        # Список приоритетных режимов для акций и фондов
+        priority_boards = ["TQBR", "TQTF", "FQBR", "TQTD"]
+
+        # Определяем, в каких режимах сейчас есть торги
+        active_boards = {
+            row["BOARDID"]
+            for row in md_rows
+            if (
+                row.get("LAST") is not None
+                or row.get("LCLOSEPRICE") is not None
+                or row.get("LCURRENTPRICE") is not None
+            )
+        }
+
+        target_board = None
+
+        # Ищем приоритетный борд, который активен
+        for board in priority_boards:
+            if board in active_boards:
+                target_board = board
+                break
+
+        # Если приоритетных нет, берем любой активный
+        if not target_board and active_boards:
+            target_board = list(active_boards)[0]
+
+        # Если торгов нет вообще
+        if not target_board:
+            priority_in_sec = [
+                r["BOARDID"] for r in sec_rows if r["BOARDID"] in priority_boards
+            ]
+            target_board = (
+                priority_in_sec[0] if priority_in_sec else sec_rows[0]["BOARDID"]
+            )
+
+        # Берем данные именно для выбранного борда
         security = next(
-            (row for row in sec_rows if row.get("BOARDID") == "TQBR"), sec_rows[0]
+            (r for r in sec_rows if r["BOARDID"] == target_board), sec_rows[0]
         )
+        market_data = next((r for r in md_rows if r["BOARDID"] == target_board), {})
 
-        # Запоминаем, какой board_id мы выбрали
-        target_board = security.get("BOARDID")
+        combined_data = {**security, **market_data}
 
-        # 3. Ищем соответствующие рыночные данные для этого же борда
-        market_data = next(
-            (row for row in md_rows if row.get("BOARDID") == target_board),
-            {},  # Если рыночных данных нет, возвращаем пустой dict
-        )
-
-        # 4. Объединяем данные
-        combined_data = {**market_data, **security}
-
-        # 5. Отдаем Pydantic
         return Share.model_validate(combined_data)
