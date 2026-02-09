@@ -1,5 +1,7 @@
 import httpx
+
 from pymoex.core.config import MoexSettings
+from pymoex.exceptions import MoexAPIError, MoexNetworkError
 
 
 class MoexSession:
@@ -21,8 +23,8 @@ class MoexSession:
 
         # Создаём асинхронный HTTP-клиент с общими параметрами
         self.client = httpx.AsyncClient(
-            base_url=self.settings.base_url,   # https://iss.moex.com/iss
-            timeout=self.settings.timeout,    # таймаут запросов в секундах
+            base_url=self.settings.base_url,  # https://iss.moex.com/iss
+            timeout=self.settings.timeout,  # таймаут запросов в секундах
             headers={
                 "User-Agent": self.settings.user_agent,  # идентификация SDK
             },
@@ -39,9 +41,23 @@ class MoexSession:
         Исключения:
         - httpx.HTTPStatusError при неуспешном статусе ответа
         """
-        response = await self.client.get(path, params=params)
-        response.raise_for_status()  # пробрасываем ошибки 4xx/5xx
-        return response.json()
+
+        try:
+            response = await self.client.get(path, params=params)
+            response.raise_for_status()
+
+            return response.json()
+        except httpx.HTTPStatusError as e:
+            # Ошибки 4xx, 5xx
+            raise MoexNetworkError(
+                f"HTTP error {e.response.status_code} for {path}"
+            ) from e
+        except httpx.RequestError as e:
+            # Ошибки сети (DNS, timeout)
+            raise MoexNetworkError(f"Network error accessing {path}: {e}") from e
+        except Exception as e:
+            # Любые другие сбои
+            raise MoexAPIError(f"Unexpected error: {e}") from e
 
     async def close(self) -> None:
         """
