@@ -21,3 +21,9 @@ class MoexAPIError(MoexError):
     """
 
     pass
+
+
+class MoexNetworkError(MoexError):
+    """Ошибки сети или HTTP статусы 4xx/5xx"""
+
+    pass
