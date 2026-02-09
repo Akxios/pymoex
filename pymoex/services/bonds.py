@@ -28,41 +28,54 @@ class BondsService:
         if not data.get("securities", {}).get("data"):
             raise InstrumentNotFoundError(f"Bond {ticker} not found")
 
-        # 1. Парсим таблицы
+        # Парсим таблицы
         sec_rows = parse_table(data["securities"])
-
         md_rows = parse_table(data.get("marketdata", {}))
         yield_rows = parse_table(data.get("marketdata_yields", {}))
 
-        # Если тикер не найден или ошибочен, sec_rows может быть пустым
-        if not sec_rows:
-            raise InstrumentNotFoundError(
-                f"Bond {ticker} not found in securities table"
+        priority_boards = ["TQOB", "TQCB", "TQOD", "TQIR"]
+
+        # Смотрим, где есть торговля
+        active_boards = {
+            row["BOARDID"]
+            for row in md_rows
+            if (
+                row.get("LAST") is not None
+                or row.get("LCLOSEPRICE") is not None
+                or row.get("LCURRENTPRICE") is not None
+            )
+        }
+
+        target_board = None
+
+        # Ищем приоритетный борд, который активен
+        for board in priority_boards:
+            if board in active_boards:
+                target_board = board
+                break
+
+        # Если приоритетных нет, берем первый активный
+        if not target_board and active_boards:
+            target_board = list(active_boards)[0]
+
+        # Если торгов нет, ищем по справочнику securities
+        if not target_board:
+            # Ищем первый борд из списка priority_boards, который есть в sec_rows
+            priority_in_sec = [
+                r["BOARDID"] for r in sec_rows if r["BOARDID"] in priority_boards
+            ]
+            target_board = (
+                priority_in_sec[0] if priority_in_sec else sec_rows[0]["BOARDID"]
             )
 
-        primary_boards = {"TQOB", "TQCB", "TQOD", "TQIR"}
-
-        # 2. Ищем лучшую запись в securities
+        # Собираем данные по выбранному борду
         security = next(
-            (row for row in sec_rows if row.get("BOARDID") in primary_boards),
-            sec_rows[0],
+            (r for r in sec_rows if r["BOARDID"] == target_board), sec_rows[0]
         )
+        market_data = next((r for r in md_rows if r["BOARDID"] == target_board), {})
+        yield_data = next((r for r in yield_rows if r["BOARDID"] == target_board), {})
 
-        # Запоминаем, какой board_id мы выбрали
-        target_board = security.get("BOARDID")
+        # Объединяем (statik < yield < market)
+        combined_data = {**security, **yield_data, **market_data}
 
-        # 3. Ищем соответствующие рыночные данные для этого же борда
-        market_data = next(
-            (row for row in md_rows if row.get("BOARDID") == target_board), {}
-        )
-
-        yield_data = next(
-            (row for row in yield_rows if row.get("BOARDID") == target_board), {}
-        )
-
-        # 4. Объединяем данные
-        # Объединяем все три источника.
-        combined_data = {**security, **market_data, **yield_data}
-
-        # 5. Отдаем Pydantic
         return Bond.model_validate(combined_data)
