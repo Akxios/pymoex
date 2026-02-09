@@ -28,15 +28,16 @@ class Bond(BaseInstrument):
         description="Торговый код инструмента на Московской бирже (SECID)",
     )
     short_name: str = Field(alias="SHORTNAME", description="Краткое название облигации")
-    name: str = Field(
-        alias="SECNAME", description="Полное официальное наименование облигации"
+    name: Optional[str] = Field(
+        None, alias="SECNAME", description="Полное официальное наименование облигации"
     )
-    isin: str = Field(
+    isin: Optional[str] = Field(
+        None,
         alias="ISIN",
         description="Международный идентификатор ценной бумаги (ISIN)",
     )
-    reg_number: str = Field(
-        alias="REGNUMBER", description="Регистрационный номер выпуска облигации"
+    reg_number: Optional[str] = Field(
+        None, alias="REGNUMBER", description="Регистрационный номер выпуска облигации"
     )
 
     # --- Рыночные показатели ---
