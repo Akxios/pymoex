@@ -40,7 +40,7 @@ class Search(BaseInstrument):
 
     def __repr__(self) -> str:
         status = "traded" if self.is_traded else "hidden"
-        return f"<Search {self.sec_id} | {self.short_name} | {self.group} | {status}>"
+        return f"<Search {self.sec_id} | {self.name} | {self.group} | {status}>"
 
 
 __all__ = ["Search"]
