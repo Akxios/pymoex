@@ -32,7 +32,7 @@ class SharesService:
         md_rows = parse_table(data.get("marketdata", {}))
 
         # Список приоритетных режимов для акций и фондов
-        priority_boards = ["TQBR", "TQTF", "FQBR", "TQTD"]
+        priority_boards = self.session.settings.preferred_share_boards
 
         # Определяем, в каких режимах сейчас есть торги
         active_boards = {

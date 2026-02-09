@@ -33,7 +33,7 @@ class BondsService:
         md_rows = parse_table(data.get("marketdata", {}))
         yield_rows = parse_table(data.get("marketdata_yields", {}))
 
-        priority_boards = ["TQOB", "TQCB", "TQOD", "TQIR"]
+        priority_boards = self.session.settings.preferred_bond_boards
 
         # Смотрим, где есть торговля
         active_boards = {
