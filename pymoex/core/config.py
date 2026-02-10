@@ -18,6 +18,7 @@ class MoexSettings(BaseSettings):
     - MOEX_BASE_URL      (базовый URL ISS API)
     - MOEX_TIMEOUT       (таймаут HTTP-запросов в секундах)
     - MOEX_USER_AGENT    (User-Agent клиента)
+    - MOEX_LOG_LEVEL     (уровень логирования)
     """
 
     # Базовый URL API Московской биржи
@@ -29,6 +30,9 @@ class MoexSettings(BaseSettings):
     # User-Agent для идентификации SDK
     user_agent: str = "pymoex-sdk/0.1.4"
 
+    # Уровень логирования
+    log_level: str = "INFO"
+
     preferred_share_boards: list[str] = ["TQBR", "TQTF", "FQBR", "TQTD"]
     preferred_bond_boards: list[str] = ["TQOB", "TQCB", "TQOD", "TQIR"]
 
@@ -37,6 +41,7 @@ class MoexSettings(BaseSettings):
         env_prefix="MOEX_",  # префикс переменных окружения
         env_file=BASE_DIR / ".env",  # путь к .env файлу
         env_file_encoding="utf-8",  # кодировка файла
+        extra="ignore",  # игнорировать неизвестные переменные окружения
     )
 
 
