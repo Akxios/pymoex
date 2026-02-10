@@ -1,7 +1,11 @@
+import logging
+
 import httpx
 
 from pymoex.core.config import MoexSettings
 from pymoex.exceptions import MoexAPIError, MoexNetworkError
+
+logger = logging.getLogger(__name__)
 
 
 class MoexSession:
@@ -42,6 +46,8 @@ class MoexSession:
         - httpx.HTTPStatusError при неуспешном статусе ответа
         """
 
+        logger.debug(f"GET {path} params={params}")
+
         try:
             response = await self.client.get(path, params=params)
             response.raise_for_status()
@@ -49,14 +55,17 @@ class MoexSession:
             return response.json()
         except httpx.HTTPStatusError as e:
             # Ошибки 4xx, 5xx
+            logger.error(f"HTTP {e.response.status_code} error requesting {path}")
             raise MoexNetworkError(
                 f"HTTP error {e.response.status_code} for {path}"
             ) from e
         except httpx.RequestError as e:
             # Ошибки сети (DNS, timeout)
+            logger.error(f"Network error requesting {path}: {e}")
             raise MoexNetworkError(f"Network error accessing {path}: {e}") from e
         except Exception as e:
             # Любые другие сбои
+            logger.exception(f"Unexpected error requesting {path}")
             raise MoexAPIError(f"Unexpected error: {e}") from e
 
     async def close(self) -> None:

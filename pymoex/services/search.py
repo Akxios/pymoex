@@ -1,7 +1,11 @@
+import logging
+
 from pymoex.core import endpoints
 from pymoex.core.constants import MOEX_BOND_GROUPS, MOEX_FUND_GROUPS, MOEX_SHARE_GROUPS
 from pymoex.models.enums import InstrumentType
 from pymoex.models.search import Search
+
+logger = logging.getLogger(__name__)
 
 
 class SearchService:
@@ -17,6 +21,8 @@ class SearchService:
         query_norm = query.strip().lower()
         itype = self._normalize_instrument_type(instrument_type)
 
+        logger.debug(f"Search query='{query_norm}' type={itype}")
+
         cache_key = f"search:{query_norm}:{itype.value if itype else 'all'}"
 
         async def _fetch():
@@ -29,18 +35,35 @@ class SearchService:
             columns = sec_data.get("columns", [])
             rows = sec_data.get("data", [])
 
+            # Превращаем списки в словари
             raw = [dict(zip(columns, row)) for row in rows]
 
-            raw = self._filter_by_type(raw, itype)
-            raw = self._rank_results(raw, query_norm)
+            logger.debug(f"MOEX returned {len(raw)} raw items for '{query_norm}'")
+
+            # Фильтрация по типу
+            filtered = self._filter_by_type(raw, itype)
+
+            if len(filtered) != len(raw):
+                logger.debug(f"Filtered by type {itype}: {len(raw)} -> {len(filtered)}")
+
+            ranked = self._rank_results(filtered, query_norm)
+
+            if not ranked and filtered:
+                logger.debug(
+                    f"Ranking removed all results for '{query_norm}' (no strict matches)"
+                )
 
             uniq = {}
-            for r in raw:
+            for r in ranked:
                 sid = r.get("secid")
                 if sid and sid.upper() not in uniq:
                     uniq[sid.upper()] = r
 
-            return [Search(**r) for r in uniq.values()]
+            results = [Search(**r) for r in uniq.values()]
+
+            logger.debug(f"Found {len(results)} unique results for '{query_norm}'")
+
+            return results
 
         return await self.cache.get_or_set(cache_key, _fetch)
 
@@ -84,7 +107,6 @@ class SearchService:
             secid = norm(r.get("secid"))
             short = norm(r.get("shortname"))
             isin = norm(r.get("isin"))
-
             full_name = norm(r.get("name"))
 
             if secid == q or isin == q:
@@ -97,12 +119,16 @@ class SearchService:
                 return 70
             if q in full_name:
                 return 65
-
             return 0
 
+        # Считаем очки
         scored = [(score(r), r) for r in raw]
+
+        # Оставляем только те, где score > 0
+        scored = [x for x in scored if x[0] > 0]
+
         scored.sort(
             key=lambda x: (x[0], -len(x[1].get("secid", "") or "")), reverse=True
         )
 
-        return [r for s, r in scored if s > 0][:20]
+        return [r for s, r in scored][:20]

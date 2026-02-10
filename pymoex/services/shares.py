@@ -1,7 +1,11 @@
+import logging
+
 from pymoex.core import endpoints
 from pymoex.exceptions import InstrumentNotFoundError
 from pymoex.models.share import Share
 from pymoex.utils.table import parse_table
+
+logger = logging.getLogger(__name__)
 
 
 class SharesService:
@@ -26,6 +30,7 @@ class SharesService:
         data = await self.session.get(endpoints.share(ticker))
 
         if not data.get("securities", {}).get("data"):
+            logger.warning(f"Share {ticker} not found in MOEX response")
             raise InstrumentNotFoundError(f"Share {ticker} not found")
 
         sec_rows = parse_table(data["securities"])
@@ -65,6 +70,8 @@ class SharesService:
             target_board = (
                 priority_in_sec[0] if priority_in_sec else sec_rows[0]["BOARDID"]
             )
+
+        logger.debug(f"Selected board '{target_board}' for share {ticker}")
 
         # Берем данные именно для выбранного борда
         security = next(

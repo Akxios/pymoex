@@ -1,13 +1,18 @@
 import asyncio
+import logging
 
 from pymoex import MoexClient
+
+logging.basicConfig(
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+)
 
 
 async def main():
     async with MoexClient() as client:
         # Акции
         share = await client.share("SBER")
-        print("Share:", share.last_price)
+        print("Share:", share)
 
         # Поиск (облигации и акции)
         results = await client.find("Сбербанк", instrument_type="share")

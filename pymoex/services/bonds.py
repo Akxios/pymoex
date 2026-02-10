@@ -1,7 +1,11 @@
+import logging
+
 from pymoex.core import endpoints
 from pymoex.exceptions import InstrumentNotFoundError
 from pymoex.models.bond import Bond
 from pymoex.utils.table import parse_table
+
+logger = logging.getLogger(__name__)
 
 
 class BondsService:
@@ -26,6 +30,7 @@ class BondsService:
         data = await self.session.get(endpoints.bond(ticker))
 
         if not data.get("securities", {}).get("data"):
+            logger.warning(f"Bond {ticker} not found in MOEX response")
             raise InstrumentNotFoundError(f"Bond {ticker} not found")
 
         # Парсим таблицы
@@ -68,7 +73,9 @@ class BondsService:
                 priority_in_sec[0] if priority_in_sec else sec_rows[0]["BOARDID"]
             )
 
-        # Собираем данные по выбранному борду
+        logger.debug(f"Selected board '{target_board}' for bond {ticker}")
+
+        # Берем данные именно для выбранного борда
         security = next(
             (r for r in sec_rows if r["BOARDID"] == target_board), sec_rows[0]
         )

@@ -1,7 +1,10 @@
 import asyncio
+import logging
 import time
 from collections import OrderedDict
 from typing import Any, Optional
+
+logger = logging.getLogger(__name__)
 
 # Монотонное время
 _now = time.monotonic
@@ -64,15 +67,18 @@ class TTLCache:
             # Быстрая проверка наличия
             val = self._get_from_data_locked(key)
             if val is not None:
+                logger.debug(f"Cache HIT: {key}")
                 return val
 
             # Проверка: не грузит ли кто-то уже?
             if key in self._pending:
+                logger.debug(f"Cache WAIT: {key} (coalescing)")
                 future = self._pending[key]
                 # Мы не инициаторы, поэтому просто запомнили future и пойдем ждать
                 im_initiator = False
             else:
                 # Мы первые. Создаем Future
+                logger.debug(f"Cache MISS: {key} -> loading...")
                 future = asyncio.Future()
                 self._pending[key] = future
                 im_initiator = True
@@ -114,7 +120,7 @@ class TTLCache:
                 self._pending.pop(key, None)
             future.set_exception(e)
 
-            # Уберам предупреждение asyncio
+            # Убираем предупреждение asyncio
             try:
                 future.result()
             except Exception:
