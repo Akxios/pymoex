@@ -1,6 +1,6 @@
 [project]
 name = "pymoex"
-version = "0.1.35"
+version = "0.1.4"
 description = "Async SDK for Moscow Exchange (MOEX) ISS API"
 authors = [{ name = "Akxios" }]
 license = { text = "MIT" }
