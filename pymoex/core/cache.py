@@ -113,6 +113,13 @@ class TTLCache:
             async with self._lock:
                 self._pending.pop(key, None)
             future.set_exception(e)
+
+            # Уберам предупреждение asyncio
+            try:
+                future.result()
+            except Exception:
+                pass
+
             raise e
 
     async def set(self, key: str, value: Any, ttl: Optional[int] = None) -> None:
