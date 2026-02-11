@@ -23,145 +23,180 @@ class Bond(BaseInstrument):
     """
 
     # --- Идентификация инструмента ---
-    sec_id: str = Field(
-        alias="SECID",
-        description="Торговый код инструмента на Московской бирже (SECID)",
-    )
-    short_name: str = Field(alias="SHORTNAME", description="Краткое название облигации")
-    name: Optional[str] = Field(
-        None, alias="SECNAME", description="Полное официальное наименование облигации"
-    )
-    isin: Optional[str] = Field(
-        None,
-        alias="ISIN",
-        description="Международный идентификатор ценной бумаги (ISIN)",
-    )
-    reg_number: Optional[str] = Field(
-        None, alias="REGNUMBER", description="Регистрационный номер выпуска облигации"
-    )
+    sec_id: str = Field(alias="SECID")
+    """Идентификатор финансового инструмента"""
 
-    # --- Рыночные показатели ---
-    prev_price: MoexDecimal = Field(
-        None, alias="PREVPRICE", description="Предыдущая цена"
-    )
-    prev_weighted_price: MoexDecimal = Field(
-        None, alias="PREVWAPRICE", description="Предыдущая средневзвешенная цена"
-    )
-    prev_close_price: MoexDecimal = Field(
-        None,
-        alias="PREVLEGALCLOSEPRICE",
-        description="Официальная цена закрытия предыдущего дня",
-    )
-    close_price: MoexDecimal = Field(
-        None, alias="CLOSEPRICE", description="Цена закрытия"
-    )
-    price_percent: MoexDecimal = Field(
-        None,
-        alias="LAST",
-        description="Цена облигации в процентах от номинала (clean price, %)",
-    )
-    effective_yield: MoexDecimal = Field(
-        None,
-        alias="EFFECTIVEYIELD",
-        description="Эффективная доходность облигации, % годовых",
-    )
-    open_price: MoexDecimal = Field(None, alias="OPEN", description="Цена открытия")
-    high_price: MoexDecimal = Field(None, alias="HIGH", description="Максимальная цена")
-    low_price: MoexDecimal = Field(None, alias="LOW", description="Минимальная цена")
+    board_id: Optional[str] = Field(None, alias="BOARDID")
+    """Идентификатор режима торгов"""
 
-    # --- Объемы торгов ---
-    volume_today: MoexInt = Field(
-        None, alias="VOLTODAY", description="Объем торгов в штуках"
-    )
-    value_today: MoexDecimal = Field(
-        None, alias="VALTODAY", description="Объем торгов в валюте (руб)"
-    )
-    num_trades: MoexInt = Field(
-        None, alias="NUMTRADES", description="Количество сделок"
-    )
+    isin: Optional[str] = Field(None, alias="ISIN")
+    """ISIN"""
 
-    # --- Купонные параметры ---
-    coupon_value: MoexDecimal = Field(
-        None, alias="COUPONVALUE", description="Размер купона в валюте номинала"
-    )
-    coupon_percent: MoexDecimal = Field(
-        None, alias="COUPONPERCENT", description="Размер купона в процентах от номинала"
-    )
-    accruedint: MoexDecimal = Field(
-        None, alias="ACCRUEDINT", description="Накопленный купонный доход (НКД)"
-    )
-    next_coupon: MoexDate = Field(
-        None, alias="NEXTCOUPON", description="Дата выплаты следующего купона"
-    )
+    short_name: str = Field(alias="SHORTNAME")
+    """Краткое наименование ценной бумаги"""
 
-    # --- Сроки обращения ---
-    mat_date: MoexDate = Field(
-        None, alias="MATDATE", description="Дата погашения облигации"
-    )
-    coupon_period: MoexInt = Field(
-        None, alias="COUPONPERIOD", description="Периодичность выплаты купона в днях"
-    )
-    date_yield_from_issuer: MoexDate = Field(
-        None,
-        alias="DATEYIELDFROMISSUER",
-        description="Дата начала расчёта доходности по данным эмитента",
-    )
+    name: Optional[str] = Field(None, alias="SECNAME")
+    """Наименование финансового инструмента"""
 
-    # --- Номинал и расчёт лотов ---
-    face_value: MoexDecimal = Field(
-        None, alias="FACEVALUE", description="Номинальная стоимость одной облигации"
-    )
-    lot_size: MoexInt = Field(
-        None, alias="LOTSIZE", description="Количество облигаций в одном торговом лоте"
-    )
-    lot_value: MoexDecimal = Field(
-        None, alias="LOTVALUE", description="Стоимость одного лота в валюте номинала"
-    )
-    face_unit: Optional[str] = Field(
-        None, alias="FACEUNIT", description="Единица номинала (например, RUB, USD)"
-    )
-    currency_id: Optional[str] = Field(
-        None, alias="CURRENCYID", description="Код валюты номинала облигации"
-    )
+    reg_number: Optional[str] = Field(None, alias="REGNUMBER")
+    """Регистрационный номер"""
 
-    # --- Ликвидность и листинг ---
-    issue_size_placed: MoexInt = Field(
-        None, alias="ISSUESIZEPLACED", description="Количество размещённых облигаций"
-    )
-    list_level: MoexInt = Field(
-        None, alias="LISTLEVEL", description="Уровень листинга на бирже"
-    )
-    status: Optional[str] = Field(
-        None,
-        alias="STATUS",
-        description="Cтатус инструмента",
-    )
-    sec_type: Optional[str] = Field(
-        None, alias="SECTYPE", description="Тип ценной бумаги"
-    )
-    duration: Optional[int] = Field(
-        None, alias="DURATION", description="Дюрация, в днях"
-    )
+    status: Optional[str] = Field(None, alias="STATUS")
+    """Статус"""
 
-    # --- Опции: оферты, выкуп ---
-    offer_date: MoexDate = Field(
-        None, alias="OFFERDATE", description="Дата оферты по облигации"
-    )
-    buyback_date: MoexDate = Field(
-        None, alias="BUYBACKDATE", description="Дата выкупа облигации"
-    )
-    buyback_price: MoexDecimal = Field(
-        None, alias="BUYBACKPRICE", description="Цена выкупа облигации"
-    )
+    list_level: MoexInt = Field(None, alias="LISTLEVEL")
+    """Уровень листинга"""
 
-    # --- Классификация ---
-    bond_type: Optional[str] = Field(
-        None, alias="BONDTYPE", description="Основной тип облигации"
-    )
-    bond_sub_type: Optional[str] = Field(
-        None, alias="BONDSUBTYPE", description="Подтип облигации"
-    )
-    board_id: Optional[str] = Field(None, alias="BOARDID", description="Код площадки")
+    sec_type: Optional[str] = Field(None, alias="SECTYPE")
+    """Тип ценной бумаги"""
+
+    bond_type: Optional[str] = Field(None, alias="BONDTYPE")
+    """Вид облигации"""
+
+    bond_sub_type: Optional[str] = Field(None, alias="BONDSUBTYPE")
+    """Подвид облигации"""
+
+    # --- Параметры номинала ---
+    face_value: MoexDecimal = Field(None, alias="FACEVALUE")
+    """Непогашенный долг"""
+
+    face_unit: Optional[str] = Field(None, alias="FACEUNIT")
+    """Валюта номинала"""
+
+    currency_id: Optional[str] = Field(None, alias="CURRENCYID")
+    """Валюта, в которой проводятся расчеты по сделкам"""
+
+    lot_size: MoexInt = Field(None, alias="LOTSIZE")
+    """Размер лота"""
+
+    lot_value: MoexDecimal = Field(None, alias="LOTVALUE")
+    """Номинальная стоимость лота, в валюте номинала"""
+
+    min_step: MoexDecimal = Field(None, alias="MINSTEP")
+    """Мин. шаг цены"""
+
+    issue_size_placed: MoexInt = Field(None, alias="ISSUESIZEPLACED")
+    """Количество ценных бумаг в обращении"""
+
+    # --- Купоны и доходность ---
+    coupon_value: MoexDecimal = Field(None, alias="COUPONVALUE")
+    """Сумма купона, в валюте номинала"""
+
+    coupon_percent: MoexDecimal = Field(None, alias="COUPONPERCENT")
+    """Ставка купона, %"""
+
+    accruedint: MoexDecimal = Field(None, alias="ACCRUEDINT")
+    """НКД на дату расчетов, в валюте расчетов"""
+
+    next_coupon: MoexDate = Field(None, alias="NEXTCOUPON")
+    """Дата окончания купона"""
+
+    coupon_period: MoexInt = Field(None, alias="COUPONPERIOD")
+    """Длительность купона"""
+
+    # --- Календарь и цены ---
+    mat_date: MoexDate = Field(None, alias="MATDATE")
+    """Дата погашения"""
+
+    buyback_date: MoexDate = Field(None, alias="BUYBACKDATE")
+    """Дата, к кот.рассч.доходность"""
+
+    buyback_price: MoexDecimal = Field(None, alias="BUYBACKPRICE")
+    """Цена оферты"""
+
+    offer_date: MoexDate = Field(None, alias="OFFERDATE")
+    """Дата Оферты"""
+
+    prev: MoexDecimal = Field(None, alias="PREV")
+    """Цена последней сделки предыдущего торгового дня, % от номинала"""
+
+    prev_price: MoexDecimal = Field(None, alias="PREVPRICE")
+    """Цена последней сделки пред. дня, % к номиналу"""
+
+    prev_weighted_price: MoexDecimal = Field(None, alias="PREVWAPRICE")
+    """Средневзвешенная цена предыдущего дня, % к номиналу"""
+
+    yield_dat_prev_wa_price: MoexDecimal = Field(None, alias="YIELDATPREVWAPRICE")
+    """Доходность по оценке пред. дня"""
+
+    # --- Цены (% от номинала) ---
+    price_percent: MoexDecimal = Field(None, alias="LAST")
+    """Цена последней сделки, %"""
+
+    open_price: MoexDecimal = Field(None, alias="OPEN")
+    """Цена первой сделки, % к номиналу"""
+
+    close_price: MoexDecimal = Field(None, alias="CLOSE")
+    """Цена последней сделки, %"""
+
+    low_price: MoexDecimal = Field(None, alias="LOW")
+    """Минимальная цена сделки, % к номиналу"""
+
+    high_price: MoexDecimal = Field(None, alias="HIGH")
+    """Максимальная цена сделки, % к номиналу"""
+
+    weighted_price: MoexDecimal = Field(None, alias="WAPRICE")
+    """Средневзвешенная цена, % к номиналу"""
+
+    lclose_price: MoexDecimal = Field(None, alias="CLOSEPRICE")
+    """Цена закрытия"""
+
+    prev_close_price: MoexDecimal = Field(None, alias="PREVLEGALCLOSEPRICE")
+    """Официальная цена закрытия предыдущего дня"""
+
+    # --- Спрос и предложение ---
+    bid: MoexDecimal = Field(None, alias="BID")
+    """Цена спроса (котировка на покупку) на момент окончания торговой сессии, % от номинала"""
+
+    offer: MoexDecimal = Field(None, alias="OFFER")
+    """Цена предложения (котировка на продажу) на момент окончания торговой сессии, % от номинала"""
+
+    spread: MoexDecimal = Field(None, alias="SPREAD")
+    """Разница между лучшей котировкой на продажу и покупку (спред), % к номиналу"""
+
+    bid_deptht: MoexInt = Field(None, alias="BIDDEPTHT")
+    """Совокупный спрос"""
+
+    offer_deptht: MoexInt = Field(None, alias="OFFERDEPTHT")
+    """Общий объем котировок на продажу, лотов"""
+
+    # --- Активность и объемы ---
+
+    num_trades: MoexInt = Field(None, alias="NUMTRADES")
+    """Количество заключенных сделок, штук"""
+
+    volume_today: MoexInt = Field(None, alias="VOLTODAY")
+    """Объем заключенных сделок в единицах ценных бумаг, штук"""
+
+    value_today: MoexDecimal = Field(None, alias="VALTODAY")
+    """Объем в валюте, в которой проводятся расчеты по сделкам"""
+
+    qty: MoexInt = Field(None, alias="QTY")
+    """Объем последней сделки, лотов"""
+
+    value: MoexDecimal = Field(None, alias="VALUE")
+    """Объем последней сделки, руб."""
+
+    # --- Расчетные показатели ---
+
+    last_yield: MoexDecimal = Field(None, alias="YIELD")
+    """Доходность по последней сделке"""
+
+    effective_yield: MoexDecimal = Field(None, alias="EFFECTIVEYIELD")
+    """Эффективная доходность"""
+
+    yield_at_weighted_price: MoexDecimal = Field(None, alias="YIELDATWAPRICE")
+    """Доходность по средневзвешенной цене, % годовых"""
+
+    duration: MoexInt = Field(None, alias="DURATION")
+    """Дюрация, дней"""
+
+    last_change: MoexInt = Field(None, alias="LASTCHANGE")
+    """Изменение цены последней сделки к цене последней сделки предыдущего торгового дня"""
+
+    # --- Служебная информация ---
+    trading_status: Optional[str] = Field(None, alias="TRADINGSTATUS")
+    """Состояние торговой сессии"""
 
     # --- Computed ---
     @computed_field
