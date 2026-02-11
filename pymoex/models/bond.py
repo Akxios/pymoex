@@ -116,7 +116,7 @@ class Bond(BaseInstrument):
     prev_weighted_price: MoexDecimal = Field(None, alias="PREVWAPRICE")
     """Средневзвешенная цена предыдущего дня, % к номиналу"""
 
-    yield_dat_prev_wa_price: MoexDecimal = Field(None, alias="YIELDATPREVWAPRICE")
+    yield_at_prev_weighted_price: MoexDecimal = Field(None, alias="YIELDATPREVWAPRICE")
     """Доходность по оценке пред. дня"""
 
     # --- Цены (% от номинала) ---
