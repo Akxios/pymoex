@@ -147,16 +147,6 @@ class Bond(BaseInstrument):
     offer_date: MoexDate = Field(
         None, alias="OFFERDATE", description="Дата оферты по облигации"
     )
-    call_option_date: MoexDate = Field(
-        None,
-        alias="CALLOPTIONDATE",
-        description="Дата колл-опциона (право эмитента на выкуп)",
-    )
-    put_option_date: MoexDate = Field(
-        None,
-        alias="PUTOPTIONDATE",
-        description="Дата пут-опциона (право держателя продать облигацию)",
-    )
     buyback_date: MoexDate = Field(
         None, alias="BUYBACKDATE", description="Дата выкупа облигации"
     )
@@ -170,9 +160,6 @@ class Bond(BaseInstrument):
     )
     bond_sub_type: Optional[str] = Field(
         None, alias="BONDSUBTYPE", description="Подтип облигации"
-    )
-    sector_id: Optional[str] = Field(
-        None, alias="SECTORID", description="Идентификатор сектора экономики"
     )
     board_id: Optional[str] = Field(None, alias="BOARDID", description="Код площадки")
 
@@ -206,7 +193,7 @@ class Bond(BaseInstrument):
         """
 
         if not data.get("LAST"):
-            data["LAST"] = data.get("PREVLEGALCLOSEPRICE") or data.get("PREVWAPRICE")
+            data["LAST"] = data.get("PREV") or data.get("PREVWAPRICE")
 
         if not data.get("EFFECTIVEYIELD"):
             data["EFFECTIVEYIELD"] = data.get("YIELD")
