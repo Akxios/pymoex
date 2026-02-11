@@ -86,7 +86,7 @@
 
 ```python
 # Получаем данные по облигации
-bond = await client.get_bond("RU000A10DS74")
+bond = await client.bond("RU000A10DS74")
 
 print(f"Название: {bond.short_name}")
 print(f"Текущая цена: {bond.last_price}%")
