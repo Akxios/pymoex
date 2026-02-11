@@ -33,6 +33,17 @@ class MoexSettings(BaseSettings):
     # Уровень логирования
     log_level: str = "INFO"
 
+    # Учетные данные
+    username: str | None = None
+    password: str | None = None
+
+    # Минимальная задержка между запросами (в секундах)
+    # Чтобы не словить бан по IP
+    request_delay: float = 0.1
+
+    # Прокси для запросов
+    proxy_url: str | None = None
+
     preferred_share_boards: list[str] = ["TQBR", "TQTF", "FQBR", "TQTD"]
     preferred_bond_boards: list[str] = ["TQOB", "TQCB", "TQOD", "TQIR"]
 
