@@ -9,6 +9,10 @@ logger = logging.getLogger(__name__)
 
 
 class SearchService:
+    """
+    Сервис для поиска инструментов
+    """
+
     def __init__(self, session, cache):
         self.session = session
         self.cache = cache
