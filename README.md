@@ -1,5 +1,5 @@
+![Python Version](https://img.shields.io/badge/python-3.12%2B-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
-![Code Style](https://img.shields.io/badge/code%20style-black-000000.svg)
 
 # pymoex
 
