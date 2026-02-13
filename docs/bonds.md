@@ -31,6 +31,7 @@
 | `LOTSIZE` | `lot_size` |  `int` | Размер лота |
 | `LOTVALUE` | `lot_value` |  `Decimal` | Номинальная стоимость лота, в валюте номинала |
 | `MINSTEP` | `min_step` |  `Decimal` | Мин. шаг цены |
+| `ISSUESIZE` | `issue_size` |  `int` | Объем выпуска, штук ценных бумаг |
 | `ISSUESIZEPLACED` | `issue_size_placed` |  `int` | Количество ценных бумаг в обращении |
 | **Купоны и доходность** |  |  |
 | `COUPONVALUE` | `coupon_value` |  `Decimal` | Сумма купона, в валюте номинала |
@@ -47,6 +48,7 @@
 | `PREVPRICE` | `prev_price` |  `Decimal` | Цена последней сделки пред. дня, % к номиналу |
 | `PREVWAPRICE` | `prev_weighted_price` |  `Decimal` | Средневзвешенная цена предыдущего дня, % к номиналу |
 | `YIELDATPREVWAPRICE` |  `yield_at_prev_weighted_price` |  `Decimal` | Доходность по оценке пред. дня |
+| `DECIMALS` | `decimals_char` |  `int` | Точность, знаков после запятой |
 
 ### Marketdata (Ход торгов)
 Динамические данные, обновляемые в реальном времени в ходе сессии.
