@@ -75,6 +75,9 @@ class Bond(BaseInstrument):
     min_step: MoexDecimal = Field(None, alias="MINSTEP")
     """Мин. шаг цены"""
 
+    issue_size: MoexInt = Field(None, alias="ISSUESIZE")
+    """Объем выпуска, штук ценных бумаг"""
+
     issue_size_placed: MoexInt = Field(None, alias="ISSUESIZEPLACED")
     """Количество ценных бумаг в обращении"""
 
@@ -118,6 +121,9 @@ class Bond(BaseInstrument):
 
     yield_at_prev_weighted_price: MoexDecimal = Field(None, alias="YIELDATPREVWAPRICE")
     """Доходность по оценке пред. дня"""
+
+    decimals_char: MoexDecimal = Field(None, alias="DECIMALS")
+    """Точность, знаков после запятой"""
 
     # --- Цены (% от номинала) ---
     price_percent: MoexDecimal = Field(None, alias="LAST")
