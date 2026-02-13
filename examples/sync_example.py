@@ -14,8 +14,8 @@ def main():
     print(share)  # Выводим результат
 
     # Получаем облигацию
-    share = get_bond("RU000A10DS74")
-    print(share)  # Выводим результат
+    bond = get_bond("RU000A10DS74")
+    print(bond)  # Выводим результат
 
     # Выполняем поиск по ключевому слову
     results = find("Сбербанк", instrument_type="share")  # instrument_type="bond"
