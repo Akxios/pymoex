@@ -9,7 +9,7 @@ logging.basicConfig(
 
 
 async def main():
-    async with MoexClient() as client:
+    async with MoexClient(use_cache=True) as client:  # use_cache=False
         # Получаем акцию
         share = await client.share("SBER")
         print("Share:", share)  # Выводим результат
