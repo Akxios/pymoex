@@ -1,7 +1,7 @@
-import asyncio
-from typing import List
+from typing import List, Optional
 
-from pymoex.core.cache import TTLCache
+from pymoex.core.cache import MemoryCache, NullCache
+from pymoex.core.interfaces import ICache
 from pymoex.core.session import MoexSession
 from pymoex.models.bond import Bond
 from pymoex.models.enums import InstrumentType
@@ -17,39 +17,42 @@ class MoexClient:
     Асинхронный клиент для работы с ISS API Московской биржи.
     """
 
-    def __init__(self, price_ttl: int = 60, search_ttl: int = 300):
+    def __init__(
+        self,
+        cache: Optional[ICache] = None,
+        use_cache: bool = True,
+    ):
         """
-        :param price_ttl: время жизни кэша цен (акции и облигации) в секундах
-        :param search_ttl: время жизни кэша поиска в секундах
+        Инициализация клиента.
+
+        :param cache: Объект кэша, реализующий интерфейс ICache (например, Redis).
+                      Если None, будет создан встроенный MemoryCache.
+        :param use_cache: Если False, кэширование будет полностью отключено (используется NullCache).
         """
 
         self.session = MoexSession()
 
-        # Кэши
-        self.cache_shares = TTLCache(ttl=price_ttl, maxsize=1000)
-        self.cache_bonds = TTLCache(ttl=price_ttl, maxsize=1000)
-        self.cache_search = TTLCache(ttl=search_ttl, maxsize=2000)
+        # Логика выбора стратегии кэширования
+        if not use_cache:
+            self._cache = NullCache()
+        elif cache is not None:
+            self._cache = cache
+        else:
+            # Дефолтный кэш: храним в памяти, 1000 элементов, TTL 60 сек
+            self._cache = MemoryCache(ttl=60, maxsize=1000)
 
-        # Сервисы
-        self.shares = SharesService(self.session, self.cache_shares)
-        self.bonds = BondsService(self.session, self.cache_bonds)
-        self.search = SearchService(self.session, self.cache_search)
+        # Передаем единый инстанс кэша во все сервисы.
+        # Сервисы сами формируют уникальные ключи (например 'share:SBER', 'bond:OFZ...').
+        self.shares = SharesService(self.session, self._cache)
+        self.bonds = BondsService(self.session, self._cache)
+        self.search = SearchService(self.session, self._cache)
 
     async def close(self) -> None:
         """
-        Закрыть HTTP-сессию и очистить кэши.
+        Закрыть HTTP-сессию и очистить ресурсы кэша.
         """
-
-        caches = [self.cache_shares, self.cache_bonds, self.cache_search]
-
-        for c in caches:
-            try:
-                res = c.clear()
-
-                if asyncio.iscoroutine(res):
-                    await res
-            except Exception:
-                pass
+        if self._cache:
+            await self._cache.clear()
 
         if self.session:
             await self.session.close()
@@ -84,23 +87,15 @@ class MoexClient:
         """
         return await self.search.find(query, instrument_type)
 
-    async def find_bonds(self, query: str):
+    async def find_bonds(self, query: str) -> List[Search]:
         """
         Поиск облигаций по строке.
-
-        :param query: строка поиска (тикер, имя, ISIN)
-        :param instrument_type:с'bond'
-        :return: список найденных облигаций
         """
         return await self.search.find(query, InstrumentType.BOND)
 
-    async def find_shares(self, query: str):
+    async def find_shares(self, query: str) -> List[Search]:
         """
         Поиск акций по строке.
-
-        :param query: строка поиска (тикер, имя, ISIN)
-        :param instrument_type: 'share'
-        :return: список найденных акций
         """
         return await self.search.find(query, InstrumentType.SHARE)
 

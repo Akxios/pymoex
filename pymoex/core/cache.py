@@ -2,178 +2,180 @@ import asyncio
 import logging
 import time
 from collections import OrderedDict
-from typing import Any, Optional
+from typing import Any, Awaitable, Callable, Optional
+
+from pymoex.core.interfaces import ICache
 
 logger = logging.getLogger(__name__)
 
-# Монотонное время
+# Монотонное время для корректного подсчета TTL (защита от перевода часов)
 _now = time.monotonic
 
 
-class TTLCache:
+class NullCache(ICache):
     """
-    Продвинутый асинхронный TTL-кэш.
+    Заглушка (Dummy Cache).
+    Используется, если кэширование нужно полностью отключить.
+    Ничего не сохраняет, factory() вызывает напрямую.
+    """
+
+    async def get(self, key: str) -> Optional[Any]:
+        return None
+
+    async def set(self, key: str, value: Any, ttl: Optional[int] = None) -> None:
+        pass
+
+    async def get_or_set(
+        self,
+        key: str,
+        factory: Callable[[], Awaitable[Any]],
+        ttl: Optional[int] = None,
+    ) -> Any:
+        # Кэша нет, поэтому просто выполняем запрос к API
+        return await factory()
+
+    async def clear(self) -> None:
+        pass
+
+
+class MemoryCache(ICache):
+    """
+    In-memory кэш с защитой от Cache Stampede (Request Coalescing).
 
     Особенности:
-    - Thread-safe (asyncio).
-    - LRU вытеснение.
-    - Request Coalescing: защита от одновременных одинаковых запросов (через Future).
+    - LRU вытеснение (удаляет старые ключи при достижении maxsize).
+    - Асинхронная thread-safe реализация (asyncio.Lock).
+    - Request Coalescing: Если 100 запросов придут за одним ключом одновременно,
+      выполнится только один реальный HTTP-запрос, остальные подождут результат.
     """
 
-    def __init__(self, ttl: int = 30, maxsize: Optional[int] = None):
+    def __init__(self, ttl: int = 60, maxsize: int = 1000):
         self.ttl = int(ttl)
-        self.maxsize = int(maxsize) if maxsize is not None else None
+        self.maxsize = int(maxsize)
 
-        # Хранение: key -> (value, expires_at)
+        # Хранилище: key -> (value, expire_at)
         self._data: dict[str, tuple[Any, float]] = {}
-        # Порядок LRU
+
+        # Очередь использования для LRU (Least Recently Used)
         self._order = OrderedDict()
 
         # Очередь ожидающих запросов: key -> asyncio.Future
         self._pending: dict[str, asyncio.Future] = {}
 
+        # Лок для защиты внутренних структур данных
         self._lock = asyncio.Lock()
 
-    def _now(self) -> float:
-        return _now()
-
     async def get(self, key: str) -> Optional[Any]:
-        """
-        Получить значение. Если оно сейчас грузится другим запросом — подождать его.
-        """
         async with self._lock:
-            # Пробуем найти готовое
-            val = self._get_from_data_locked(key)
-            if val is not None:
-                return val
+            return self._get_locked(key)
 
-            # Если не нашли, проверяем, не грузится ли оно прямо сейчас
-            future = self._pending.get(key)
-
-        # Ждем снаружи лока
-        if future:
-            try:
-                return await future
-            except Exception:
-                return None
-
-        return None
-
-    async def get_or_set(self, key: str, factory, ttl: Optional[int] = None):
-        """
-        Получить или создать. Гарантирует, что factory вызовется 1 раз для ключа.
-        """
+    async def set(self, key: str, value: Any, ttl: Optional[int] = None) -> None:
+        expire = _now() + (ttl if ttl is not None else self.ttl)
         async with self._lock:
-            # Быстрая проверка наличия
-            val = self._get_from_data_locked(key)
+            self._set_locked(key, value, expire)
+
+    async def get_or_set(
+        self,
+        key: str,
+        factory: Callable[[], Awaitable[Any]],
+        ttl: Optional[int] = None,
+    ) -> Any:
+        async with self._lock:
+            # 1. Быстрая проверка: может значение уже есть и оно свежее?
+            val = self._get_locked(key)
             if val is not None:
                 logger.debug(f"Cache HIT: {key}")
                 return val
 
-            # Проверка: не грузит ли кто-то уже?
+            # 2. Проверка Request Coalescing (Склейка запросов)
+            # Если кто-то уже загружает этот ключ прямо сейчас, мы просто подпишемся на результат
             if key in self._pending:
                 logger.debug(f"Cache WAIT: {key} (coalescing)")
                 future = self._pending[key]
-                # Мы не инициаторы, поэтому просто запомнили future и пойдем ждать
                 im_initiator = False
             else:
-                # Мы первые. Создаем Future
+                # Мы первые -> создаем Future, становимся инициатором загрузки
                 logger.debug(f"Cache MISS: {key} -> loading...")
                 future = asyncio.Future()
                 self._pending[key] = future
                 im_initiator = True
 
-        # --- БЛОК ОЖИДАНИЯ ---
+        # --- БЛОК ОЖИДАНИЯ (для тех, кто пришел вторым и далее) ---
         if not im_initiator:
-            return await future
+            try:
+                return await future
+            except Exception:
+                # Если инициатор упал с ошибкой, нам тоже придется вернуть None (или упасть).
+                # Вернем None, чтобы вызывающий код мог попробовать перезапросить.
+                return None
 
-        # --- БЛОК ЗАГРУЗКИ ---
+        # --- БЛОК ЗАГРУЗКИ (для инициатора) ---
         try:
-            # Выполняем factory без блокировки кэша
-            result = factory()
-            if asyncio.iscoroutine(result):
-                result = await result
+            # Выполняем factory() БЕЗ блокировки кэша, чтобы не тормозить другие запросы к другим ключам
+            result = await factory()
 
             # Сохраняем результат
-            expires_at = self._now() + (int(ttl) if ttl is not None else self.ttl)
+            expire = _now() + (ttl if ttl is not None else self.ttl)
 
             async with self._lock:
-                # Проверяем, не удалили ли pending, пока мы работали
+                # Проверяем, что ключ все еще в pending (не был очищен через clear())
                 if key in self._pending:
-                    self._data[key] = (result, expires_at)
-                    self._order[key] = True
-                    self._move_to_end_locked(key)
-
-                    # Убираем из pending
+                    self._set_locked(key, result, expire)
+                    # Убираем из очереди ожидания, так как загрузка завершена
                     self._pending.pop(key, None)
 
-                    # Чистим место, если надо
-                    self._evict_if_needed_locked()
+            # Сообщаем всем ждущим успех
+            if not future.done():
+                future.set_result(result)
 
-            # Сообщаем всем ждущим
-            future.set_result(result)
             return result
 
         except Exception as e:
-            # Если factory упала, нужно сообщить ошибку всем, кто ждет
+            # Если загрузка упала (сетевая ошибка и т.д.), нужно сообщить ошибку всем ждущим
             async with self._lock:
+                # Удаляем из pending, чтобы следующий запрос попробовал загрузить снова
                 self._pending.pop(key, None)
-            future.set_exception(e)
 
-            # Убираем предупреждение asyncio
-            try:
-                future.result()
-            except Exception:
-                pass
-
+            if not future.done():
+                future.set_exception(e)
             raise e
 
-    async def set(self, key: str, value: Any, ttl: Optional[int] = None) -> None:
-        expires_at = self._now() + (int(ttl) if ttl is not None else self.ttl)
-        async with self._lock:
-            self._data[key] = (value, expires_at)
-            self._move_to_end_locked(key)
-            self._evict_if_needed_locked()
-
-    async def delete(self, key: str) -> None:
-        async with self._lock:
-            self._delete_locked(key)
-
     async def clear(self) -> None:
-        """Полная очистка."""
+        """Полная очистка кэша."""
         async with self._lock:
             self._data.clear()
             self._order.clear()
+            # Важно: мы не трогаем _pending, чтобы текущие летящие запросы могли корректно завершиться
 
-    # --- Приватные хелперы ---
+    # --- Приватные методы (вызывать только под self._lock) ---
 
-    def _get_from_data_locked(self, key: str) -> Optional[Any]:
-        """Возвращает значение или None, удаляет протухшее."""
-        item = self._data.get(key)
-        if not item:
+    def _get_locked(self, key: str) -> Optional[Any]:
+        """Безопасное получение значения без блокировки (блокировка должна быть снаружи)."""
+        if key not in self._data:
             return None
 
-        val, expires_at = item
-        if self._now() > expires_at:
+        val, expire = self._data[key]
+        if _now() > expire:
             self._delete_locked(key)
             return None
 
-        self._move_to_end_locked(key)
+        # LRU: перемещаем в конец списка (как недавно использованный)
+        self._order.move_to_end(key)
         return val
 
-    def _move_to_end_locked(self, key: str):
-        try:
-            self._order.move_to_end(key, last=True)
-        except KeyError:
-            self._order[key] = True
+    def _set_locked(self, key: str, value: Any, expire: float):
+        """Безопасное сохранение значения."""
+        # Если ключа нет и место кончилось -> удаляем самый старый (LRU Eviction)
+        if key not in self._data and len(self._data) >= self.maxsize:
+            # popitem(last=False) удаляет первый (самый старый) элемент
+            oldest, _ = self._order.popitem(last=False)
+            self._data.pop(oldest, None)
+
+        self._data[key] = (value, expire)
+        # Обновляем порядок LRU
+        self._order[key] = True
+        self._order.move_to_end(key)
 
     def _delete_locked(self, key: str):
         self._data.pop(key, None)
         self._order.pop(key, None)
-
-    def _evict_if_needed_locked(self):
-        if self.maxsize is None:
-            return
-        while len(self._data) > self.maxsize:
-            oldest_key, _ = self._order.popitem(last=False)
-            self._data.pop(oldest_key, None)
