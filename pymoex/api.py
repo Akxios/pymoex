@@ -3,6 +3,7 @@ from typing import Awaitable, Callable, List, TypeVar
 
 from pymoex.client import MoexClient
 from pymoex.models.bond import Bond
+from pymoex.models.enums import InstrumentType
 from pymoex.models.search import Search
 from pymoex.models.share import Share
 
@@ -80,3 +81,16 @@ def find_bonds(query: str) -> List[Search]:
     """
 
     return _run_client_call(lambda c: c.find_bonds(query))
+
+
+def find(
+    query: str, instrument_type: InstrumentType | str | None = None
+) -> List[Search]:
+    """
+    Синхронный поиск по строке.
+
+    :param query: тикер, название, ISIN, эмитент
+    :return: список Search
+    """
+
+    return _run_client_call(lambda c: c.find(query, instrument_type))

@@ -1,4 +1,5 @@
 import asyncio
+from typing import List
 
 from pymoex.core.cache import TTLCache
 from pymoex.core.session import MoexSession
@@ -73,7 +74,7 @@ class MoexClient:
 
     async def find(
         self, query: str, instrument_type: InstrumentType | str | None = None
-    ) -> list[Search]:
+    ) -> List[Search]:
         """
         Поиск инструментов по строке.
 
