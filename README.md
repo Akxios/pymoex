@@ -32,7 +32,7 @@ pymoex - это современная, быстрая и типизирован
 Требуется **Python 3.12** или выше.
 Через pip:
 ```bash
-pip install git+https://github.com/Akxios/pymoex.git
+pip install https://github.com/Akxios/pymoex.git
 ```
 Через [uv](https://github.com/astral-sh/uv) (рекомендуется):
 ```bash
