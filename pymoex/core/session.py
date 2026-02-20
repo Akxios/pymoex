@@ -1,4 +1,6 @@
+import asyncio
 import logging
+import time
 
 import httpx
 from tenacity import (
@@ -44,6 +46,29 @@ class MoexSession:
             },
         )
 
+        self._rate_limit_lock = asyncio.Lock()
+        self._last_request_time = 0.0
+
+    async def _apply_rate_limit(self) -> None:
+        """
+        Гарантирует, что между отправкой запросов проходит не менее request_delay секунд.
+        Выстраивает конкурентные запросы в честную очередь.
+        """
+        delay = self.settings.request_delay
+        if delay <= 0:
+            return
+
+        async with self._rate_limit_lock:
+            now = time.monotonic()
+            elapsed = now - self._last_request_time
+
+            # Если с прошлого запроса прошло меньше времени, чем положено, спим остаток
+            if elapsed < delay:
+                await asyncio.sleep(delay - elapsed)
+
+            # Обновляем время (уже после возможного сна)
+            self._last_request_time = time.monotonic()
+
     @retry(
         retry=retry_if_exception(_is_retryable_error),
         stop=stop_after_attempt(3),  # Максимум 3 попытки
@@ -57,6 +82,9 @@ class MoexSession:
         self, path: str, params: dict | None = None
     ) -> httpx.Response:
         """Внутренний метод для выполнения запроса с механизмом повторных попыток."""
+
+        await self._apply_rate_limit()
+
         response = await self.client.get(path, params=params)
         response.raise_for_status()
         return response
@@ -92,5 +120,5 @@ class MoexSession:
             raise MoexAPIError(f"Unexpected error: {e}") from e
 
     async def close(self) -> None:
-        """Корректно закрыть HTTP-сессию."""
+        """Корректно закрываем HTTP-сессию."""
         await self.client.aclose()

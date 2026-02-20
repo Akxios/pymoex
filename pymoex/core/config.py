@@ -30,9 +30,6 @@ class MoexSettings(BaseSettings):
     # User-Agent для идентификации SDK
     user_agent: str = "pymoex-sdk/0.1.4"
 
-    # Уровень логирования
-    log_level: str = "INFO"
-
     # Учетные данные
     username: str | None = None
     password: str | None = None
