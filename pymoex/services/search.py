@@ -4,6 +4,7 @@ from pymoex.core import endpoints
 from pymoex.core.constants import MOEX_BOND_GROUPS, MOEX_FUND_GROUPS, MOEX_SHARE_GROUPS
 from pymoex.models.enums import InstrumentType
 from pymoex.models.search import Search
+from pymoex.utils.table import parse_table
 
 logger = logging.getLogger(__name__)
 
@@ -36,11 +37,8 @@ class SearchService:
             )
 
             sec_data = data.get("securities", {})
-            columns = sec_data.get("columns", [])
-            rows = sec_data.get("data", [])
 
-            # Превращаем списки в словари
-            raw = [dict(zip(columns, row)) for row in rows]
+            raw = parse_table(sec_data)
 
             logger.debug(f"MOEX returned {len(raw)} raw items for '{query_norm}'")
 
