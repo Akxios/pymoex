@@ -29,13 +29,13 @@ async def run_benchmark():
         success = [r for r in results if not isinstance(r, Exception)]
         errors = [r for r in results if isinstance(r, Exception)]
 
-        print(f"\n--- Результаты ---")
+        print("\n--- Результаты ---")
         print(f"Успешно: {len(success)}")
         print(f"Ошибок: {len(errors)}")
         print(f"Общее время: {end_time - start_time:.2f} сек")
 
         if success:
-            print(f"Пример данных: {success[0].sec_id} - {success[0].last_price} руб.")
+            print(f"Пример данных: {success[0].sec_id} - {success[0].last_price} руб.")  # type: ignore
 
 
 if __name__ == "__main__":
