@@ -39,8 +39,17 @@ class Search(BaseInstrument):
     emitent_okpo: Optional[str] = Field(None, alias="emitent_okpo")
 
     def __repr__(self) -> str:
-        status = "traded" if self.is_traded else "hidden"
-        return f"<Search {self.sec_id} | {self.name} | {self.group} | {status}>"
+        # Защита от None: если полного имени нет, берем краткое
+        display_name = self.name or self.short_name
+
+        # Опциональные поля выводим только если они есть
+        isin_part = f" | {self.isin}" if self.isin else ""
+        group_part = f" | {self.group}" if self.group else ""
+
+        # Более понятный статус на русском
+        status = "Торгуется" if self.is_traded else "Не торгуется"
+
+        return f"<Search | {self.sec_id}{isin_part} | {display_name}{group_part} | {status}>"
 
 
 __all__ = ["Search"]
