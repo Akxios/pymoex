@@ -1,7 +1,9 @@
 import logging
+from typing import List
 
 from pymoex.core import endpoints
 from pymoex.exceptions import InstrumentNotFoundError
+from pymoex.models.dividend import Dividend
 from pymoex.models.share import Share
 from pymoex.utils.table import parse_table
 
@@ -82,3 +84,26 @@ class SharesService:
         combined_data = {**security, **market_data}
 
         return Share.model_validate(combined_data)
+
+    async def get_dividends(self, ticker: str) -> List[Dividend]:
+        """
+        Получить историю дивидендов и будущие утвержденные выплаты по акции.
+        """
+        ticker = ticker.upper()
+        cache_key = f"dividends:{ticker}"
+
+        async def _fetch():
+            data = await self.session.get(endpoints.dividends(ticker))
+
+            # Если блок dividends пустой или отсутствует
+            if not data.get("dividends", {}).get("data"):
+                logger.info(f"No dividends found for {ticker}")
+                return []
+
+            div_rows = parse_table(data["dividends"])
+
+            # Преобразуем каждую строку ответа биржи в Pydantic-модель
+            return [Dividend.model_validate(row) for row in div_rows]
+
+        # Дивиденды можно кэшировать надолго (например, на час = 3600 сек)
+        return await self.cache.get_or_set(cache_key, _fetch, ttl=3600)
