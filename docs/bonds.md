@@ -1,6 +1,7 @@
 # Документация по облигациям (Bonds)
 
 [← Вернуться к README](../README.md)
+[← Полный пример кода](../examples/test_bonds.py)
 
 Здесь собраны основные поля, которые возвращает MOEX ISS API для рынка облигаций, и их соответствие типам в `pymoex`. Посмотреть все поля можно тут: https://iss.moex.com/iss/engines/stock/markets/bonds/
 
@@ -163,4 +164,5 @@ print(f"Доходность: {bond.effective_yield}%")
 print(f"Ближайший купон: {bond.next_coupon} ({bond.coupon_value} {bond.face_unit})")
 ```
 
+[← Полный пример кода](../examples/test_bonds.py)
 [← Вернуться к README](../README.md)
