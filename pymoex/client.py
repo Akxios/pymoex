@@ -4,6 +4,8 @@ from pymoex.core.cache import MemoryCache, NullCache
 from pymoex.core.interfaces import ICache
 from pymoex.core.session import MoexSession
 from pymoex.models.bond import Bond
+from pymoex.models.bondization import Amortization, Coupon
+from pymoex.models.dividend import Dividend
 from pymoex.models.enums import InstrumentType
 from pymoex.models.search import Search
 from pymoex.models.share import Share
@@ -98,6 +100,23 @@ class MoexClient:
         Поиск акций по строке.
         """
         return await self.search.find(query, InstrumentType.SHARE)
+
+    async def dividends(self, ticker: str) -> List[Dividend]:
+        """
+        Получить данные по дивидендам.
+
+        :param ticker: тикер (например, 'SBER')
+        :return: список дивидендов
+        """
+        return await self.shares.get_dividends(ticker)
+
+    async def coupons(self, ticker: str) -> List[Coupon]:
+        """Асинхронно получить историю и график купонов по облигации."""
+        return await self.bonds.get_coupons(ticker)
+
+    async def amortizations(self, ticker: str) -> List[Amortization]:
+        """Асинхронно получить график амортизации по облигации."""
+        return await self.bonds.get_amortizations(ticker)
 
     async def __aenter__(self) -> "MoexClient":
         return self
