@@ -1,8 +1,10 @@
 import logging
+from typing import List
 
 from pymoex.core import endpoints
 from pymoex.exceptions import InstrumentNotFoundError
 from pymoex.models.bond import Bond
+from pymoex.models.bondization import Amortization, Coupon
 from pymoex.utils.table import parse_table
 
 logger = logging.getLogger(__name__)
@@ -86,3 +88,42 @@ class BondsService:
         combined_data = {**security, **yield_data, **market_data}
 
         return Bond.model_validate(combined_data)
+
+    async def get_coupons(self, ticker: str) -> List[Coupon]:
+        """
+        Получить историю и график будущих купонов по облигации.
+        """
+        ticker = ticker.upper()
+        cache_key = f"coupons:{ticker}"
+
+        async def _fetch():
+            data = await self.session.get(endpoints.bondization(ticker))
+
+            if not data.get("coupons", {}).get("data"):
+                logger.info(f"No coupons found for {ticker}")
+                return []
+
+            rows = parse_table(data["coupons"])
+            return [Coupon.model_validate(row) for row in rows]
+
+        # События меняются редко, кэшируем на час
+        return await self.cache.get_or_set(cache_key, _fetch, ttl=3600)
+
+    async def get_amortizations(self, ticker: str) -> List[Amortization]:
+        """
+        Получить график амортизации (выплаты номинала) по облигации.
+        """
+        ticker = ticker.upper()
+        cache_key = f"amortizations:{ticker}"
+
+        async def _fetch():
+            data = await self.session.get(endpoints.bondization(ticker))
+
+            if not data.get("amortizations", {}).get("data"):
+                logger.info(f"No amortizations found for {ticker}")
+                return []
+
+            rows = parse_table(data["amortizations"])
+            return [Amortization.model_validate(row) for row in rows]
+
+        return await self.cache.get_or_set(cache_key, _fetch, ttl=3600)
