@@ -1,7 +1,7 @@
 import asyncio
 import atexit
 import threading
-from typing import Awaitable, Callable, List, TypeVar
+from typing import Any, Callable, Coroutine, List, TypeVar
 
 from pymoex.client import MoexClient
 from pymoex.models.bond import Bond
@@ -55,7 +55,7 @@ class _SyncManager:
         if self._thread.is_alive():
             self._thread.join(timeout=2)
 
-    def execute(self, coro: Awaitable[T]) -> T:
+    def execute(self, coro: Coroutine[Any, Any, T]) -> T:
         """Запуск корутины в фоновом потоке с ожиданием результата."""
 
         # Проверяем, не запущен ли уже event loop в текущем потоке (FastAPI, Jupyter)
@@ -84,7 +84,7 @@ def _get_manager() -> _SyncManager:
     return _manager
 
 
-def _run_client_call(func: Callable[[MoexClient], Awaitable[T]]) -> T:
+def _run_client_call(func: Callable[[MoexClient], Coroutine[Any, Any, T]]) -> T:
     """
     Выполняет асинхронный вызов, переиспользуя глобальный клиент
     в фоновом потоке, чтобы сохранить кэш и пул соединений.
