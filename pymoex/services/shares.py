@@ -5,6 +5,7 @@ from pymoex.core import endpoints
 from pymoex.exceptions import InstrumentNotFoundError
 from pymoex.models.dividend import Dividend
 from pymoex.models.share import Share
+from pymoex.utils.boards import select_best_board
 from pymoex.utils.table import parse_table
 
 logger = logging.getLogger(__name__)
@@ -41,37 +42,9 @@ class SharesService:
         # Список приоритетных режимов для акций и фондов
         priority_boards = self.session.settings.preferred_share_boards
 
-        # Определяем, в каких режимах сейчас есть торги
-        active_boards = {
-            row["BOARDID"]
-            for row in md_rows
-            if (
-                row.get("LAST") is not None
-                or row.get("LCLOSEPRICE") is not None
-                or row.get("LCURRENTPRICE") is not None
-            )
-        }
-
-        target_board = None
-
-        # Ищем приоритетный борд, который активен
-        for board in priority_boards:
-            if board in active_boards:
-                target_board = board
-                break
-
-        # Если приоритетных нет, берем любой активный
-        if not target_board and active_boards:
-            target_board = list(active_boards)[0]
-
-        # Если торгов нет вообще
-        if not target_board:
-            priority_in_sec = [
-                r["BOARDID"] for r in sec_rows if r["BOARDID"] in priority_boards
-            ]
-            target_board = (
-                priority_in_sec[0] if priority_in_sec else sec_rows[0]["BOARDID"]
-            )
+        target_board = select_best_board(
+            sec_rows=sec_rows, md_rows=md_rows, priority_boards=priority_boards
+        )
 
         logger.debug(f"Selected board '{target_board}' for share {ticker}")
 

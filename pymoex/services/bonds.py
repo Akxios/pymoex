@@ -5,6 +5,7 @@ from pymoex.core import endpoints
 from pymoex.exceptions import InstrumentNotFoundError
 from pymoex.models.bond import Bond
 from pymoex.models.bondization import Amortization, Coupon
+from pymoex.utils.boards import select_best_board
 from pymoex.utils.table import parse_table
 
 logger = logging.getLogger(__name__)
@@ -42,38 +43,9 @@ class BondsService:
 
         priority_boards = self.session.settings.preferred_bond_boards
 
-        # Смотрим, где есть торговля
-        active_boards = {
-            row["BOARDID"]
-            for row in md_rows
-            if (
-                row.get("LAST") is not None
-                or row.get("LCLOSEPRICE") is not None
-                or row.get("LCURRENTPRICE") is not None
-            )
-        }
-
-        target_board = None
-
-        # Ищем приоритетный борд, который активен
-        for board in priority_boards:
-            if board in active_boards:
-                target_board = board
-                break
-
-        # Если приоритетных нет, берем первый активный
-        if not target_board and active_boards:
-            target_board = list(active_boards)[0]
-
-        # Если торгов нет, ищем по справочнику securities
-        if not target_board:
-            # Ищем первый борд из списка priority_boards, который есть в sec_rows
-            priority_in_sec = [
-                r["BOARDID"] for r in sec_rows if r["BOARDID"] in priority_boards
-            ]
-            target_board = (
-                priority_in_sec[0] if priority_in_sec else sec_rows[0]["BOARDID"]
-            )
+        target_board = select_best_board(
+            sec_rows=sec_rows, md_rows=md_rows, priority_boards=priority_boards
+        )
 
         logger.debug(f"Selected board '{target_board}' for bond {ticker}")
 
