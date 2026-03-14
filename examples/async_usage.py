@@ -11,7 +11,7 @@ async def main():
 
         print("--- Акции ---")
         print(f"Название: {share.short_name}")
-        print(f"Текущая цена: {share.last_price} {share.currency_id}")
+        print(f"Текущая цена: {share.prev_price} {share.currency_id}")
 
         print("\nПоследние дивиденды:")
         dividends = await client.dividends(share_ticker)

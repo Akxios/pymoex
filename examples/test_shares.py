@@ -11,7 +11,7 @@ async def main():
         share = await client.share(ticker)
 
         print(f"Название: {share.short_name}")
-        print(f"Текущая цена: {share.last_price} {share.currency_id}")
+        print(f"Текущая цена: {share.prev_price} {share.currency_id}")
         print(f"Объем торгов: {share.volume_today} шт.\n")
 
         # Получаем историю дивидендов

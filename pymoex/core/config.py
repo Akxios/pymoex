@@ -28,7 +28,7 @@ class MoexSettings(BaseSettings):
     timeout: int = 10
 
     # User-Agent для идентификации SDK
-    user_agent: str = "pymoex-sdk/0.1.6"
+    user_agent: str = "pymoex-sdk/0.1.7"
 
     # Учетные данные
     username: str | None = None
