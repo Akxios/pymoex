@@ -159,7 +159,7 @@ def get_dividends(ticker: str) -> List[Dividend]:
     :param ticker: тикер акции (например, 'SBER')
     :return: список объектов Dividend
     """
-    # Используем ту самую исправленную обертку _run_client_call
+
     return _run_client_call(lambda c: c.dividends(ticker))
 
 
@@ -170,7 +170,7 @@ def get_coupons(ticker: str) -> List[Coupon]:
     :param ticker: тикер облигации (например, 'SBERP')
     :return: список объектов Coupon
     """
-    # Используем ту самую исправленную обертку _run_client_call
+
     return _run_client_call(lambda c: c.coupons(ticker))
 
 
@@ -181,5 +181,5 @@ def get_amortizations(ticker: str) -> List[Amortization]:
     :param ticker: тикер облигации (например, 'SBERP')
     :return: список объектов Amortization
     """
-    # Используем ту самую исправленную обертку _run_client_call
+
     return _run_client_call(lambda c: c.amortizations(ticker))
