@@ -6,6 +6,7 @@ from typing import Any, Callable, Coroutine, List, TypeVar
 from pymoex.client import MoexClient
 from pymoex.models.bond import Bond
 from pymoex.models.bondization import Amortization, Coupon
+from pymoex.models.currency import Currency
 from pymoex.models.dividend import Dividend
 from pymoex.models.enums import InstrumentType
 from pymoex.models.search import Search
@@ -183,3 +184,21 @@ def get_amortizations(ticker: str) -> List[Amortization]:
     """
 
     return _run_client_call(lambda c: c.amortizations(ticker))
+
+
+def get_fund(ticker: str) -> Share:
+    """Синхронно получить данные по фонду (ПИФ/ETF)."""
+    return _run_client_call(lambda c: c.fund(ticker))
+
+
+def get_currency(ticker: str) -> Currency:
+    """Синхронно получить данные по валюте."""
+    return _run_client_call(lambda c: c.currency(ticker))
+
+
+def find_funds(query: str) -> List[Search]:
+    return _run_client_call(lambda c: c.find_funds(query))
+
+
+def find_currencies(query: str) -> List[Search]:
+    return _run_client_call(lambda c: c.find_currencies(query))

@@ -5,11 +5,13 @@ from pymoex.core.interfaces import ICache
 from pymoex.core.session import MoexSession
 from pymoex.models.bond import Bond
 from pymoex.models.bondization import Amortization, Coupon
+from pymoex.models.currency import Currency
 from pymoex.models.dividend import Dividend
 from pymoex.models.enums import InstrumentType
 from pymoex.models.search import Search
 from pymoex.models.share import Share
 from pymoex.services.bonds import BondsService
+from pymoex.services.currencies import CurrenciesService
 from pymoex.services.search import SearchService
 from pymoex.services.shares import SharesService
 
@@ -47,6 +49,7 @@ class MoexClient:
         # Сервисы сами формируют уникальные ключи (например 'share:SBER', 'bond:OFZ...').
         self.shares = SharesService(self.session, self._cache)
         self.bonds = BondsService(self.session, self._cache)
+        self.currencies = CurrenciesService(self.session, self._cache)
         self.search = SearchService(self.session, self._cache)
 
     async def close(self) -> None:
@@ -77,6 +80,21 @@ class MoexClient:
         """
         return await self.bonds.get_bond(ticker)
 
+    async def fund(self, ticker: str) -> Share:
+        """
+        Получить данные по биржевому фонду (ETF, БПИФ).
+        Под капотом использует тот же API, что и для акций.
+        """
+
+        return await self.shares.get_share(ticker)
+
+    async def currency(self, ticker: str) -> Currency:
+        """
+        Получить данные по валютной паре.
+        :param ticker: тикер (например, 'CNYRUB_TOM')
+        """
+        return await self.currencies.get_currency(ticker)
+
     async def find(
         self, query: str, instrument_type: InstrumentType | str | None = None
     ) -> List[Search]:
@@ -100,6 +118,12 @@ class MoexClient:
         Поиск акций по строке.
         """
         return await self.search.find(query, InstrumentType.SHARE)
+
+    async def find_funds(self, query: str) -> List[Search]:
+        return await self.search.find(query, InstrumentType.FUND)
+
+    async def find_currencies(self, query: str) -> List[Search]:
+        return await self.search.find(query, InstrumentType.CURRENCY)
 
     async def dividends(self, ticker: str) -> List[Dividend]:
         """
