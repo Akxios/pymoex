@@ -28,7 +28,7 @@ class MoexSettings(BaseSettings):
     timeout: int = 10
 
     # User-Agent для идентификации SDK
-    user_agent: str = "pymoex-sdk/0.1.7"
+    user_agent: str = "pymoex-sdk/0.1.6"
 
     # Учетные данные
     username: str | None = None
@@ -43,6 +43,7 @@ class MoexSettings(BaseSettings):
 
     preferred_share_boards: list[str] = ["TQBR", "TQTF", "FQBR", "TQTD"]
     preferred_bond_boards: list[str] = ["TQOB", "TQCB", "TQOD", "TQIR"]
+    preferred_currency_boards: list[str] = ["CETS", "CNGD", "SNDX"]
 
     # Конфигурация pydantic-settings
     model_config = SettingsConfigDict(

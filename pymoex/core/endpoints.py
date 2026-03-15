@@ -61,3 +61,14 @@ def bondization(ticker: str) -> str:
     :return: путь вида /securities/{ticker}/bondization.json
     """
     return f"/securities/{ticker}/bondization.json"
+
+
+def currency(ticker: str, market: str = "selt") -> str:
+    """
+    Эндпоинт для получения информации по валюте.
+
+    :param ticker: торговый код валюты (например, 'USD000UTSTOM' или 'USDRUBTOMOTC')
+    :param market: рынок торгов внутри движка currency (по умолчанию 'selt')
+    :return: путь вида /engines/currency/markets/{market}/securities/{ticker}.json
+    """
+    return f"/engines/currency/markets/{market}/securities/{ticker}.json"
