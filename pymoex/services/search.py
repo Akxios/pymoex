@@ -1,7 +1,12 @@
 import logging
 
 from pymoex.core import endpoints
-from pymoex.core.constants import MOEX_BOND_GROUPS, MOEX_FUND_GROUPS, MOEX_SHARE_GROUPS
+from pymoex.core.constants import (
+    MOEX_BOND_GROUPS,
+    MOEX_CURRENCY_GROUPS,
+    MOEX_FUND_GROUPS,
+    MOEX_SHARE_GROUPS,
+)
 from pymoex.models.enums import InstrumentType
 from pymoex.models.search import Search
 from pymoex.utils.table import parse_table
@@ -76,13 +81,17 @@ class SearchService:
             return raw
 
         if itype == InstrumentType.SHARE:
-            allowed = MOEX_SHARE_GROUPS | MOEX_FUND_GROUPS
+            allowed = MOEX_SHARE_GROUPS
             return [r for r in raw if r.get("group") in allowed]
+
+        if itype == InstrumentType.FUND:
+            return [r for r in raw if r.get("group") in MOEX_FUND_GROUPS]
 
         if itype == InstrumentType.BOND:
             return [r for r in raw if r.get("group") in MOEX_BOND_GROUPS]
 
-        return raw
+        if itype == InstrumentType.CURRENCY:
+            return [r for r in raw if r.get("group") in MOEX_CURRENCY_GROUPS]
 
     @staticmethod
     def _normalize_instrument_type(
