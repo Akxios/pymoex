@@ -12,3 +12,5 @@ class InstrumentType(str, Enum):
 
     SHARE = "share"
     BOND = "bond"
+    FUND = "fund"
+    CURRENCY = "currency"
