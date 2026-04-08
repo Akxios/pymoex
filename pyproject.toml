@@ -5,7 +5,7 @@ description = "Async SDK for Moscow Exchange (MOEX) ISS API"
 authors = [{ name = "Akxios" }]
 license = { text = "MIT" }
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.13"
 keywords = ["moex", "stocks", "bonds", "trading", "api", "sdk"]
 classifiers = [
     "Programming Language :: Python :: 3",
