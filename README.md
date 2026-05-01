@@ -1,8 +1,3 @@
-![Python Version](https://img.shields.io/badge/python-3.12%2B-blue)
-![License](https://img.shields.io/badge/license-MIT-green)
-![Tests](https://github.com/Akxios/pymoex/actions/workflows/tests.yml/badge.svg)
-
-# pymoex
 
 pymoex - это современная, быстрая и типизированная асинхронная библиотека для взаимодействия с Московской Биржей (MOEX ISS API).
 
