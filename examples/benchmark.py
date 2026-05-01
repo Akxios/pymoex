@@ -3,10 +3,11 @@ import logging
 import time
 
 from pymoex import MoexClient
+from pymoex.core.config import settings
 
 # Включаем логирование, чтобы видеть паузы между запросами
 logging.basicConfig(
-    level=logging.INFO,
+    level=settings.log_level,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
 
