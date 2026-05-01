@@ -104,6 +104,43 @@ if __name__ == "__main__":
 
 ---
 
+### Переменные окружения
+
+Поддерживаются настройки через префикс `MOEX_` (из окружения или `.env`):
+
+- `MOEX_BASE_URL` — базовый URL API (по умолчанию `https://iss.moex.com/iss`).
+- `MOEX_TIMEOUT` — таймаут HTTP-запросов в секундах (по умолчанию `10`).
+- `MOEX_USER_AGENT` — User-Agent клиента.
+- `MOEX_REQUEST_DELAY` — минимальная базовая пауза между запросами в секундах (по умолчанию `0.1`).
+- `MOEX_REQUEST_JITTER` — дополнительная случайная пауза `random.uniform(0, jitter)` в секундах (по умолчанию `0.05`). Чтобы отключить jitter, установите `0`.
+
+Пример:
+
+```bash
+MOEX_REQUEST_DELAY=0.1
+MOEX_REQUEST_JITTER=0
+```
+
+---
+
+## ⚠️ Обработка ошибок
+
+`pymoex` выбрасывает специализированные исключения для разных HTTP-статусов и сценариев ошибок:
+
+| Статус / сценарий | Исключение |
+|---|---|
+| HTTP 400 | `MoexBadRequestError` |
+| HTTP 401 / 403 | `MoexAuthError` |
+| HTTP 404 | `MoexNotFoundError` |
+| HTTP 429 | `MoexRateLimitError` |
+| HTTP 5xx | `MoexServerError` |
+| Другие HTTP 4xx/5xx | `MoexHTTPError` |
+| Таймаут (`httpx.TimeoutException`) | `MoexTimeoutError` |
+| Ошибка сети (`httpx.RequestError`) | `MoexNetworkError` |
+| Ошибка JSON/формата ответа | `MoexResponseParseError` |
+
+---
+
 ## 🧠 Кэширование
 
 Библиотека имеет встроенную продвинутую систему кэширования с защитой от **Cache Stampede** (Request Coalescing). Это означает, что если 1000 пользователей одновременно запросят данные по одной акции, библиотека сделает **только один** запрос к бирже.
@@ -152,7 +189,7 @@ uv sync
 ```
 2. Запустите тесты:
 ```bash
-pytest tests/ -v
+uv run pytest
 ```
 Тесты используют respx для мокирования ответов API MOEX, что позволяет проверять логику без реальных сетевых запросов к бирже.
 
