@@ -15,10 +15,13 @@ class MoexSettings(BaseSettings):
     - из файла .env в корне проекта
 
     Поддерживаемые переменные окружения:
-    - MOEX_BASE_URL      (базовый URL ISS API)
-    - MOEX_TIMEOUT       (таймаут HTTP-запросов в секундах)
-    - MOEX_USER_AGENT    (User-Agent клиента)
-    - MOEX_LOG_LEVEL     (уровень логирования)
+    - MOEX_BASE_URL       (базовый URL ISS API)
+    - MOEX_TIMEOUT        (таймаут HTTP-запросов в секундах)
+    - MOEX_USER_AGENT     (User-Agent клиента)
+    - MOEX_LOG_LEVEL      (уровень логирования)
+    - MOEX_REQUEST_DELAY  (базовая задержка между запросами, сек)
+    - MOEX_REQUEST_JITTER (случайный jitter к задержке, сек)
+
     """
 
     # Базовый URL API Московской биржи
@@ -30,6 +33,8 @@ class MoexSettings(BaseSettings):
     # User-Agent для идентификации SDK
     user_agent: str = "pymoex-sdk/0.1.6"
 
+    log_level: str = "WARNING"
+
     # Учетные данные
     username: str | None = None
     password: str | None = None
@@ -37,6 +42,10 @@ class MoexSettings(BaseSettings):
     # Минимальная задержка между запросами (в секундах)
     # Чтобы не словить бан по IP
     request_delay: float = 0.1
+
+    # Случайный jitter (в секундах), добавляемый к базовой задержке
+    # Можно отключить, установив 0
+    request_jitter: float = 0.05
 
     # Прокси для запросов
     proxy_url: str | None = None

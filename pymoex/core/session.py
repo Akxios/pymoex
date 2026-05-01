@@ -1,6 +1,8 @@
 import asyncio
 import logging
+import random
 import time
+from typing import Any
 
 import httpx
 from tenacity import (
@@ -12,7 +14,18 @@ from tenacity import (
 )
 
 from pymoex.core.config import MoexSettings
-from pymoex.exceptions import MoexAPIError, MoexNetworkError
+from pymoex.exceptions import (
+    MoexAPIError,
+    MoexAuthError,
+    MoexBadRequestError,
+    MoexHTTPError,
+    MoexNetworkError,
+    MoexNotFoundError,
+    MoexRateLimitError,
+    MoexResponseParseError,
+    MoexServerError,
+    MoexTimeoutError,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -55,16 +68,23 @@ class MoexSession:
         Выстраивает конкурентные запросы в честную очередь.
         """
         delay = self.settings.request_delay
-        if delay <= 0:
+
+        jitter = self.settings.request_jitter
+
+        if delay <= 0 and jitter <= 0:
             return
 
         async with self._rate_limit_lock:
             now = time.monotonic()
             elapsed = now - self._last_request_time
 
+            # Базовая пауза + случайный джиттер
+            jitter_part = random.uniform(0, jitter) if jitter > 0 else 0.0
+            target_delay = max(delay, 0.0) + jitter_part
+
             # Если с прошлого запроса прошло меньше времени, чем положено, спим остаток
-            if elapsed < delay:
-                await asyncio.sleep(delay - elapsed)
+            if elapsed < target_delay:
+                await asyncio.sleep(target_delay - elapsed)
 
             # Обновляем время (уже после возможного сна)
             self._last_request_time = time.monotonic()
@@ -79,7 +99,7 @@ class MoexSession:
         reraise=True,  # Пробрасываем ошибку дальше, если попытки исчерпаны
     )
     async def _execute_request(
-        self, path: str, params: dict | None = None
+        self, path: str, params: dict[str, Any] | None = None
     ) -> httpx.Response:
         """Внутренний метод для выполнения запроса с механизмом повторных попыток."""
 
@@ -89,7 +109,9 @@ class MoexSession:
         response.raise_for_status()
         return response
 
-    async def get(self, path: str, params: dict | None = None) -> dict:
+    async def get(
+        self, path: str, params: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
         """
         Выполнить GET-запрос к MOEX ISS API.
 
@@ -103,18 +125,42 @@ class MoexSession:
         try:
             # Делегируем выполнение запроса методу с @retry
             response = await self._execute_request(path, params)
-            return response.json()
 
         except httpx.HTTPStatusError as e:
             # Сюда попадут 4xx ошибки сразу, а 5xx — если исчерпаны все попытки ретраев
-            logger.error(f"HTTP {e.response.status_code} error requesting {path}")
-            raise MoexNetworkError(
-                f"HTTP error {e.response.status_code} for {path}"
-            ) from e
+            status_code = e.response.status_code
+            logger.error(f"HTTP {status_code} error requesting {path}")
+            if status_code == 400:
+                raise MoexBadRequestError(f"HTTP 400 for {path}") from e
+            if status_code in {401, 403}:
+                raise MoexAuthError(f"HTTP {status_code} for {path}") from e
+            if status_code == 404:
+                raise MoexNotFoundError(f"HTTP 404 for {path}") from e
+            if status_code == 429:
+                raise MoexRateLimitError(f"HTTP 429 for {path}") from e
+            if status_code >= 500:
+                raise MoexServerError(f"HTTP {status_code} for {path}") from e
+            raise MoexHTTPError(f"HTTP {status_code} for {path}") from e
+        except httpx.TimeoutException as e:
+            logger.error(f"Timeout requesting {path}: {e}")
+            raise MoexTimeoutError(f"Timeout while accessing {path}: {e}") from e
         except httpx.RequestError as e:
             # Исчерпаны все попытки при сетевых сбоях
             logger.error(f"Network error requesting {path}: {e}")
             raise MoexNetworkError(f"Network error accessing {path}: {e}") from e
+
+        try:
+            return response.json()
+        except ValueError as e:
+            logger.error(f"Response parse error for {path}: {e}")
+            raise MoexResponseParseError(
+                f"Invalid JSON response for {path}: {e}"
+            ) from e
+        except TypeError as e:
+            logger.error(f"Unexpected response format for {path}: {e}")
+            raise MoexResponseParseError(
+                f"Unexpected response format for {path}: {e}"
+            ) from e
         except Exception as e:
             logger.exception(f"Unexpected error requesting {path}")
             raise MoexAPIError(f"Unexpected error: {e}") from e

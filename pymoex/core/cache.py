@@ -96,18 +96,13 @@ class MemoryCache(ICache):
             else:
                 # Мы первые -> создаем Future, становимся инициатором загрузки
                 logger.debug(f"Cache MISS: {key} -> loading...")
-                future = asyncio.Future()
+                future = asyncio.get_running_loop().create_future()
                 self._pending[key] = future
                 im_initiator = True
 
         # --- БЛОК ОЖИДАНИЯ (для тех, кто пришел вторым и далее) ---
         if not im_initiator:
-            try:
-                return await future
-            except Exception:
-                # Если инициатор упал с ошибкой, нам тоже придется вернуть None (или упасть).
-                # Вернем None, чтобы вызывающий код мог попробовать перезапросить.
-                return None
+            return await future
 
         # --- БЛОК ЗАГРУЗКИ (для инициатора) ---
         try:
@@ -132,13 +127,17 @@ class MemoryCache(ICache):
 
         except Exception as e:
             # Если загрузка упала (сетевая ошибка и т.д.), нужно сообщить ошибку всем ждущим
+            logger.exception("Cache load failed", extra={"key": key})
+
             async with self._lock:
                 # Удаляем из pending, чтобы следующий запрос попробовал загрузить снова
                 self._pending.pop(key, None)
 
             if not future.done():
                 future.set_exception(e)
-            raise e
+                future.add_done_callback(lambda f: f.exception())
+
+            raise
 
     async def clear(self) -> None:
         """Полная очистка кэша."""
