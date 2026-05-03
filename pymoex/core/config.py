@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # Корень проекта (используется для поиска .env)
@@ -15,12 +16,12 @@ class MoexSettings(BaseSettings):
     - из файла .env в корне проекта
 
     Поддерживаемые переменные окружения:
-    - MOEX_BASE_URL       (базовый URL ISS API)
-    - MOEX_TIMEOUT        (таймаут HTTP-запросов в секундах)
-    - MOEX_USER_AGENT     (User-Agent клиента)
-    - MOEX_LOG_LEVEL      (уровень логирования)
-    - MOEX_REQUEST_DELAY  (базовая задержка между запросами, сек)
-    - MOEX_REQUEST_JITTER (случайный jitter к задержке, сек)
+    - BASE_URL       (базовый URL ISS API)
+    - TIMEOUT        (таймаут HTTP-запросов в секундах)
+    - USER_AGENT     (User-Agent клиента)
+    - LOG_LEVEL      (уровень логирования)
+    - REQUEST_DELAY  (базовая задержка между запросами, сек)
+    - REQUEST_JITTER (случайный jitter к задержке, сек)
 
     """
 
@@ -33,11 +34,8 @@ class MoexSettings(BaseSettings):
     # User-Agent для идентификации SDK
     user_agent: str = "pymoex-sdk/0.1.6"
 
+    # Уровень логирования
     log_level: str = "WARNING"
-
-    # Учетные данные
-    username: str | None = None
-    password: str | None = None
 
     # Минимальная задержка между запросами (в секундах)
     # Чтобы не словить бан по IP
@@ -50,9 +48,19 @@ class MoexSettings(BaseSettings):
     # Прокси для запросов
     proxy_url: str | None = None
 
-    preferred_share_boards: list[str] = ["TQBR", "TQTF", "FQBR", "TQTD"]
-    preferred_bond_boards: list[str] = ["TQOB", "TQCB", "TQOD", "TQIR"]
-    preferred_currency_boards: list[str] = ["CETS", "CNGD", "SNDX"]
+    # Учетные данные
+    username: str | None = None
+    password: str | None = None
+
+    preferred_share_boards: list[str] = Field(
+        default_factory=lambda: ["TQBR", "TQTF", "FQBR", "TQTD"]
+    )
+    preferred_bond_boards: list[str] = Field(
+        default_factory=lambda: ["TQOB", "TQCB", "TQOD", "TQIR"]
+    )
+    preferred_currency_boards: list[str] = Field(
+        default_factory=lambda: ["CETS", "CNGD", "SNDX"]
+    )
 
     # Конфигурация pydantic-settings
     model_config = SettingsConfigDict(
