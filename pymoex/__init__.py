@@ -1,3 +1,7 @@
+"""pymoex: Асинхронный SDK для Московской биржи (MOEX) API."""
+
+__version__ = "0.1.6"
+
 import logging
 
 from .api import (
