@@ -1,5 +1,3 @@
-from unittest import result
-
 import typer
 
 from pymoex.api import (
