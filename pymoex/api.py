@@ -118,6 +118,19 @@ def get_bond(ticker: str) -> Bond:
     return _run_client_call(lambda c: c.bond(ticker))
 
 
+def find(
+    query: str, instrument_type: InstrumentType | str | None = None
+) -> List[Search]:
+    """
+    Синхронный поиск по строке.
+
+    :param query: тикер, название, ISIN, эмитент
+    :return: список Search
+    """
+
+    return _run_client_call(lambda c: c.find(query, instrument_type))
+
+
 def find_shares(query: str) -> List[Search]:
     """
     Синхронный поиск акций по строке.
@@ -140,17 +153,24 @@ def find_bonds(query: str) -> List[Search]:
     return _run_client_call(lambda c: c.find_bonds(query))
 
 
-def find(
-    query: str, instrument_type: InstrumentType | str | None = None
-) -> List[Search]:
+def find_funds(query: str) -> List[Search]:
     """
-    Синхронный поиск по строке.
+    Синхронный поиск фондов по строке.
 
     :param query: тикер, название, ISIN, эмитент
     :return: список Search
     """
+    return _run_client_call(lambda c: c.find_funds(query))
 
-    return _run_client_call(lambda c: c.find(query, instrument_type))
+
+def find_currencies(query: str) -> List[Search]:
+    """
+    Синхронный поиск валют по строке.
+
+    :param query: тикер, название, ISIN, эмитент
+    :return: список Search
+    """
+    return _run_client_call(lambda c: c.find_currencies(query))
 
 
 def get_dividends(ticker: str) -> List[Dividend]:
@@ -187,18 +207,20 @@ def get_amortizations(ticker: str) -> List[Amortization]:
 
 
 def get_fund(ticker: str) -> Share:
-    """Синхронно получить данные по фонду (ПИФ/ETF)."""
+    """
+    Синхронно получить данные по фонду (ПИФ/ETF).
+
+    :param ticker: тикер фонда (например, 'SBER')
+    :return: объект Share
+    """
     return _run_client_call(lambda c: c.fund(ticker))
 
 
 def get_currency(ticker: str) -> Currency:
-    """Синхронно получить данные по валюте."""
+    """
+    Синхронно получить данные по валюте.
+
+    :param ticker: тикер валютной пары (например, 'CNYRUB_TOM')
+    :return: объект Currency
+    """
     return _run_client_call(lambda c: c.currency(ticker))
-
-
-def find_funds(query: str) -> List[Search]:
-    return _run_client_call(lambda c: c.find_funds(query))
-
-
-def find_currencies(query: str) -> List[Search]:
-    return _run_client_call(lambda c: c.find_currencies(query))
