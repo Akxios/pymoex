@@ -1,4 +1,4 @@
-from typing import override
+from typing import ClassVar, override
 
 from pydantic import BaseModel, ConfigDict
 
@@ -12,7 +12,7 @@ class BaseInstrument(BaseModel):
     - игнорирует лишние поля
     """
 
-    model_config: ConfigDict = ConfigDict(  # pyright: ignore[reportIncompatibleVariableOverride]
+    model_config: ClassVar[ConfigDict] = ConfigDict(
         populate_by_name=True,
         extra="ignore",
     )
