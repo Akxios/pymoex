@@ -2,6 +2,7 @@ import asyncio
 
 import pytest
 from httpx import Response
+
 from tests.conftest import MOEX_SEARCH_JSON
 
 
