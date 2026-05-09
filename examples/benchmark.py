@@ -36,7 +36,7 @@ async def run_benchmark():
         print(f"Общее время: {end_time - start_time:.2f} сек")
 
         if success:
-            print(f"Пример данных: {success[0].sec_id} - {success[0].prev_price} руб.")  # type: ignore
+            print(f"Пример данных: {success[0].sec_id} - {success[0].prev_price} руб.")
 
 
 if __name__ == "__main__":
