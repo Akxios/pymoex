@@ -20,7 +20,7 @@ from .api import (
 )
 from .client import MoexClient
 
-logging.getLogger(__name__).addHandler(logging.NullHandler())
+logging.getLogger(name=__name__).addHandler(hdlr=logging.NullHandler())
 
 __all__ = [
     "MoexClient",
