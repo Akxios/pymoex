@@ -3,7 +3,7 @@ name = "pymoex"
 version = "0.1.6"
 description = "Async SDK for Moscow Exchange (MOEX) ISS API"
 authors = [{ name = "Akxios" }]
-license = { text = "MIT" }
+license = "MIT"
 readme = "README.md"
 requires-python = ">=3.12"
 keywords = ["moex", "stocks", "bonds", "trading", "api", "sdk"]
