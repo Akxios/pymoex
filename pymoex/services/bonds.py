@@ -1,5 +1,4 @@
 import logging
-from typing import List
 
 from pymoex.core import endpoints
 from pymoex.exceptions import InstrumentNotFoundError
@@ -61,7 +60,7 @@ class BondsService:
 
         return Bond.model_validate(combined_data)
 
-    async def get_coupons(self, ticker: str) -> List[Coupon]:
+    async def get_coupons(self, ticker: str) -> list[Coupon]:
         """
         Получить историю и график будущих купонов по облигации.
         """
@@ -81,7 +80,7 @@ class BondsService:
         # События меняются редко, кэшируем на час
         return await self.cache.get_or_set(cache_key, _fetch, ttl=3600)
 
-    async def get_amortizations(self, ticker: str) -> List[Amortization]:
+    async def get_amortizations(self, ticker: str) -> list[Amortization]:
         """
         Получить график амортизации (выплаты номинала) по облигации.
         """

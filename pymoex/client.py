@@ -1,5 +1,3 @@
-from typing import List, Optional
-
 from pymoex.core.cache import MemoryCache, NullCache
 from pymoex.core.interfaces import ICache
 from pymoex.core.session import MoexSession
@@ -23,7 +21,7 @@ class MoexClient:
 
     def __init__(
         self,
-        cache: Optional[ICache] = None,
+        cache: ICache | None = None,
         use_cache: bool = True,
     ):
         """
@@ -97,7 +95,7 @@ class MoexClient:
 
     async def find(
         self, query: str, instrument_type: InstrumentType | str | None = None
-    ) -> List[Search]:
+    ) -> list[Search]:
         """
         Поиск инструментов по строке.
 
@@ -107,25 +105,25 @@ class MoexClient:
         """
         return await self.search.find(query, instrument_type)
 
-    async def find_bonds(self, query: str) -> List[Search]:
+    async def find_bonds(self, query: str) -> list[Search]:
         """
         Поиск облигаций по строке.
         """
         return await self.search.find(query, InstrumentType.BOND)
 
-    async def find_shares(self, query: str) -> List[Search]:
+    async def find_shares(self, query: str) -> list[Search]:
         """
         Поиск акций по строке.
         """
         return await self.search.find(query, InstrumentType.SHARE)
 
-    async def find_funds(self, query: str) -> List[Search]:
+    async def find_funds(self, query: str) -> list[Search]:
         return await self.search.find(query, InstrumentType.FUND)
 
-    async def find_currencies(self, query: str) -> List[Search]:
+    async def find_currencies(self, query: str) -> list[Search]:
         return await self.search.find(query, InstrumentType.CURRENCY)
 
-    async def dividends(self, ticker: str) -> List[Dividend]:
+    async def dividends(self, ticker: str) -> list[Dividend]:
         """
         Получить данные по дивидендам.
 
@@ -134,11 +132,11 @@ class MoexClient:
         """
         return await self.shares.get_dividends(ticker)
 
-    async def coupons(self, ticker: str) -> List[Coupon]:
+    async def coupons(self, ticker: str) -> list[Coupon]:
         """Асинхронно получить историю и график купонов по облигации."""
         return await self.bonds.get_coupons(ticker)
 
-    async def amortizations(self, ticker: str) -> List[Amortization]:
+    async def amortizations(self, ticker: str) -> list[Amortization]:
         """Асинхронно получить график амортизации по облигации."""
         return await self.bonds.get_amortizations(ticker)
 

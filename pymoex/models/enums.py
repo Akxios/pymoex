@@ -1,7 +1,7 @@
-from enum import Enum
+from enum import StrEnum
 
 
-class InstrumentType(str, Enum):
+class InstrumentType(StrEnum):
     """
     Тип финансового инструмента.
 

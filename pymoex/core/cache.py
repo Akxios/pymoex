@@ -2,7 +2,8 @@ import asyncio
 import logging
 import time
 from collections import OrderedDict
-from typing import Any, Awaitable, Callable, Optional
+from collections.abc import Awaitable, Callable
+from typing import Any
 
 from pymoex.core.interfaces import ICache
 
@@ -19,17 +20,17 @@ class NullCache(ICache):
     Ничего не сохраняет, factory() вызывает напрямую.
     """
 
-    async def get(self, key: str) -> Optional[Any]:
+    async def get(self, key: str) -> Any | None:
         return None
 
-    async def set(self, key: str, value: Any, ttl: Optional[int] = None) -> None:
+    async def set(self, key: str, value: Any, ttl: int | None = None) -> None:
         pass
 
     async def get_or_set(
         self,
         key: str,
         factory: Callable[[], Awaitable[Any]],
-        ttl: Optional[int] = None,
+        ttl: int | None = None,
     ) -> Any:
         # Кэша нет, поэтому просто выполняем запрос к API
         return await factory()
@@ -65,11 +66,11 @@ class MemoryCache(ICache):
         # Лок для защиты внутренних структур данных
         self._lock = asyncio.Lock()
 
-    async def get(self, key: str) -> Optional[Any]:
+    async def get(self, key: str) -> Any | None:
         async with self._lock:
             return self._get_locked(key)
 
-    async def set(self, key: str, value: Any, ttl: Optional[int] = None) -> None:
+    async def set(self, key: str, value: Any, ttl: int | None = None) -> None:
         expire = _now() + (ttl if ttl is not None else self.ttl)
         async with self._lock:
             self._set_locked(key, value, expire)
@@ -78,7 +79,7 @@ class MemoryCache(ICache):
         self,
         key: str,
         factory: Callable[[], Awaitable[Any]],
-        ttl: Optional[int] = None,
+        ttl: int | None = None,
     ) -> Any:
         async with self._lock:
             # 1. Быстрая проверка: может значение уже есть и оно свежее?
@@ -148,7 +149,7 @@ class MemoryCache(ICache):
 
     # --- Приватные методы (вызывать только под self._lock) ---
 
-    def _get_locked(self, key: str) -> Optional[Any]:
+    def _get_locked(self, key: str) -> Any | None:
         """Безопасное получение значения без блокировки (блокировка должна быть снаружи)."""
         if key not in self._data:
             return None

@@ -1,5 +1,3 @@
-from typing import Optional
-
 from pydantic import Field
 
 from .base import BaseInstrument
@@ -17,43 +15,43 @@ class Search(BaseInstrument):
     short_name: str = Field(alias="shortname")
     """Краткое название"""
 
-    name: Optional[str] = Field(None, alias="name")
+    name: str | None = Field(None, alias="name")
     """Полное название"""
 
-    isin: Optional[str] = Field(None, alias="isin")
+    isin: str | None = Field(None, alias="isin")
     """ISIN (Международный идентификационный код)"""
 
-    reg_number: Optional[str] = Field(None, alias="regnumber")
+    reg_number: str | None = Field(None, alias="regnumber")
     """Регистрационный номер (для акций/облигаций)"""
 
     # --- Классификация ---
-    type: Optional[str] = Field(None, alias="type")
+    type: str | None = Field(None, alias="type")
     """Тип бумаги (например, common_share, corporate_bond)"""
 
-    group: Optional[str] = Field(None, alias="group")
+    group: str | None = Field(None, alias="group")
     """Группа инструмента (например, stock_shares, stock_bonds)"""
 
     # --- Торговые данные ---
-    is_traded: Optional[bool] = Field(False, alias="is_traded")
+    is_traded: bool | None = Field(False, alias="is_traded")
     """Признак того, торгуется ли сейчас инструмент"""
 
-    primary_boardid: Optional[str] = Field(None, alias="primary_boardid")
+    primary_boardid: str | None = Field(None, alias="primary_boardid")
     """Главный режим торгов (например, TQBR)"""
 
-    marketprice_boardid: Optional[str] = Field(None, alias="marketprice_boardid")
+    marketprice_boardid: str | None = Field(None, alias="marketprice_boardid")
     """Режим торгов для расчета рыночной цены"""
 
     # --- Эмитент (Компания) ---
-    emitent_id: Optional[int] = Field(None, alias="emitent_id")
+    emitent_id: int | None = Field(None, alias="emitent_id")
     """Внутренний ID эмитента на бирже"""
 
-    emitent_title: Optional[str] = Field(None, alias="emitent_title")
+    emitent_title: str | None = Field(None, alias="emitent_title")
     """Юридическое название эмитента"""
 
-    emitent_inn: Optional[str] = Field(None, alias="emitent_inn")
+    emitent_inn: str | None = Field(None, alias="emitent_inn")
     """ИНН эмитента"""
 
-    emitent_okpo: Optional[str] = Field(None, alias="emitent_okpo")
+    emitent_okpo: str | None = Field(None, alias="emitent_okpo")
     """ОКПО эмитента"""
 
     # --- Repr ---

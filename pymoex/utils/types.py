@@ -1,14 +1,14 @@
 import logging
 from datetime import date
 from decimal import Decimal, InvalidOperation
-from typing import Annotated, Optional
+from typing import Annotated
 
 from pydantic import BeforeValidator
 
 logger = logging.getLogger(__name__)
 
 
-def safe_date(value: str | None) -> Optional[date]:
+def safe_date(value: str | None) -> date | None:
     """
     Преобразует строку даты из MOEX API в корректное значение.
 
@@ -29,7 +29,7 @@ def safe_date(value: str | None) -> Optional[date]:
         return None
 
 
-def parse_decimal(value) -> Optional[Decimal]:
+def parse_decimal(value) -> Decimal | None:
     """Преобразует строку/число в Decimal, обрабатывая прочерки и пустоты."""
     if value in (None, "", "—", "-"):
         return None
@@ -43,7 +43,7 @@ def parse_decimal(value) -> Optional[Decimal]:
         return None
 
 
-def parse_int(value) -> Optional[int]:
+def parse_int(value) -> int | None:
     """Преобразует строку в int, обрабатывая прочерки."""
     if value in (None, "", "—", "-"):
         return None
@@ -54,6 +54,6 @@ def parse_int(value) -> Optional[int]:
         return None
 
 
-MoexDate = Annotated[Optional[date], BeforeValidator(safe_date)]
-MoexDecimal = Annotated[Optional[Decimal], BeforeValidator(parse_decimal)]
-MoexInt = Annotated[Optional[int], BeforeValidator(parse_int)]
+MoexDate = Annotated[date | None, BeforeValidator(safe_date)]
+MoexDecimal = Annotated[Decimal | None, BeforeValidator(parse_decimal)]
+MoexInt = Annotated[int | None, BeforeValidator(parse_int)]

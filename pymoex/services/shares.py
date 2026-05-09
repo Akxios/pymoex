@@ -1,5 +1,4 @@
 import logging
-from typing import List
 
 from pymoex.core import endpoints
 from pymoex.exceptions import InstrumentNotFoundError
@@ -58,7 +57,7 @@ class SharesService:
 
         return Share.model_validate(combined_data)
 
-    async def get_dividends(self, ticker: str) -> List[Dividend]:
+    async def get_dividends(self, ticker: str) -> list[Dividend]:
         """
         Получить историю дивидендов и будущие утвержденные выплаты по акции.
         """

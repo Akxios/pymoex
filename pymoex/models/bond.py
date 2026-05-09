@@ -1,5 +1,4 @@
 from decimal import Decimal
-from typing import Optional
 
 from pydantic import Field, computed_field, model_validator
 
@@ -26,44 +25,44 @@ class Bond(BaseInstrument):
     sec_id: str = Field(alias="SECID")
     """Идентификатор финансового инструмента"""
 
-    board_id: Optional[str] = Field(None, alias="BOARDID")
+    board_id: str | None = Field(None, alias="BOARDID")
     """Идентификатор режима торгов"""
 
-    isin: Optional[str] = Field(None, alias="ISIN")
+    isin: str | None = Field(None, alias="ISIN")
     """ISIN"""
 
     short_name: str = Field(alias="SHORTNAME")
     """Краткое наименование ценной бумаги"""
 
-    name: Optional[str] = Field(None, alias="SECNAME")
+    name: str | None = Field(None, alias="SECNAME")
     """Наименование финансового инструмента"""
 
-    reg_number: Optional[str] = Field(None, alias="REGNUMBER")
+    reg_number: str | None = Field(None, alias="REGNUMBER")
     """Регистрационный номер"""
 
-    status: Optional[str] = Field(None, alias="STATUS")
+    status: str | None = Field(None, alias="STATUS")
     """Статус"""
 
     list_level: MoexInt = Field(None, alias="LISTLEVEL")
     """Уровень листинга"""
 
-    sec_type: Optional[str] = Field(None, alias="SECTYPE")
+    sec_type: str | None = Field(None, alias="SECTYPE")
     """Тип ценной бумаги"""
 
-    bond_type: Optional[str] = Field(None, alias="BONDTYPE")
+    bond_type: str | None = Field(None, alias="BONDTYPE")
     """Вид облигации"""
 
-    bond_sub_type: Optional[str] = Field(None, alias="BONDSUBTYPE")
+    bond_sub_type: str | None = Field(None, alias="BONDSUBTYPE")
     """Подвид облигации"""
 
     # --- Параметры номинала ---
     face_value: MoexDecimal = Field(None, alias="FACEVALUE")
     """Непогашенный долг"""
 
-    face_unit: Optional[str] = Field(None, alias="FACEUNIT")
+    face_unit: str | None = Field(None, alias="FACEUNIT")
     """Валюта номинала"""
 
-    currency_id: Optional[str] = Field(None, alias="CURRENCYID")
+    currency_id: str | None = Field(None, alias="CURRENCYID")
     """Валюта, в которой проводятся расчеты по сделкам"""
 
     lot_size: MoexInt = Field(None, alias="LOTSIZE")
@@ -201,13 +200,13 @@ class Bond(BaseInstrument):
     """Изменение цены последней сделки к цене последней сделки предыдущего торгового дня"""
 
     # --- Служебная информация ---
-    trading_status: Optional[str] = Field(None, alias="TRADINGSTATUS")
+    trading_status: str | None = Field(None, alias="TRADINGSTATUS")
     """Состояние торговой сессии"""
 
     # --- Computed ---
     @computed_field
     @property
-    def last_price(self) -> Optional[Decimal]:
+    def last_price(self) -> Decimal | None:
         """Последняя чистая цена в валюте (Nominal * Price%)."""
         if self.price_percent is None or self.face_value is None:
             return None
@@ -216,7 +215,7 @@ class Bond(BaseInstrument):
 
     @computed_field
     @property
-    def last_dirty_price(self) -> Optional[Decimal]:
+    def last_dirty_price(self) -> Decimal | None:
         """Грязная цена (Clean Price + НКД)."""
         clean = self.last_price
 

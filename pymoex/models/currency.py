@@ -1,5 +1,3 @@
-from typing import Optional
-
 from pydantic import Field, model_validator
 
 from pymoex.utils.types import MoexDecimal, MoexInt
@@ -16,16 +14,16 @@ class Currency(BaseInstrument):
     sec_id: str = Field(alias="SECID")
     """Идентификатор финансового инструмента"""
 
-    board_id: Optional[str] = Field(None, alias="BOARDID")
+    board_id: str | None = Field(None, alias="BOARDID")
     """Код площадки"""
 
     short_name: str = Field(alias="SHORTNAME")
     """Краткое наименование ценной бумаги"""
 
-    name: Optional[str] = Field(None, alias="SECNAME")
+    name: str | None = Field(None, alias="SECNAME")
     """Наименование финансового инструмента"""
 
-    status: Optional[str] = Field(None, alias="STATUS")
+    status: str | None = Field(None, alias="STATUS")
     """Статус инструмента"""
 
     # --- Цены ---

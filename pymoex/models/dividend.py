@@ -1,5 +1,4 @@
 from datetime import date
-from typing import Optional
 
 from pydantic import Field
 
@@ -16,7 +15,7 @@ class Dividend(BaseInstrument):
     sec_id: str = Field(alias="secid")
     """Идентификатор финансового инструмента"""
 
-    isin: Optional[str] = Field(default=None, alias="isin")
+    isin: str | None = Field(default=None, alias="isin")
     """ISIN"""
 
     registry_close_date: date = Field(alias="registryclosedate")

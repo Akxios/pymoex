@@ -1,4 +1,7 @@
+from typing import Annotated
+
 import typer
+from typer.main import Typer
 
 from pymoex.api import (
     find,
@@ -9,127 +12,165 @@ from pymoex.api import (
     get_dividends,
     get_share,
 )
+from pymoex.models.bond import Bond
+from pymoex.models.bondization import Coupon
+from pymoex.models.dividend import Dividend
+from pymoex.models.search import Search
+from pymoex.models.share import Share
 
-app = typer.Typer(help="Утилита для работы с данными Московской биржи")
+app: Typer = typer.Typer(help="Утилита для работы с данными Московской биржи")
 
-share_app = typer.Typer(help="Работа с акциями (поиск, информация, дивиденды)")
-bond_app = typer.Typer(help="Работа с облигациями (поиск, купоны, амортизация)")
+share_app: Typer = typer.Typer(help="Работа с акциями (поиск, информация, дивиденды)")
+bond_app: Typer = typer.Typer(help="Работа с облигациями (поиск, купоны, амортизация)")
 
-app.add_typer(share_app, name="share")
-app.add_typer(bond_app, name="bond")
+app.add_typer(typer_instance=share_app, name="share")
+app.add_typer(typer_instance=bond_app, name="bond")
 
 
 # ПОИСК
 @app.command()
-def search(query: str = typer.Argument(..., help="Общий поиск")):
+def search(
+    query: Annotated[
+        str,
+        typer.Argument(..., help="Общий поиск"),
+    ],
+) -> None:
     """
     Синхронный поиск по строке.
     """
-    results = find(query)
+    results: list[Search] = find(query)
 
     if not results:
-        typer.secho("Ничего не найдено.", fg=typer.colors.YELLOW)
+        typer.secho(message="Ничего не найдено.", fg=typer.colors.YELLOW)
         raise typer.Exit()
 
-    typer.secho(f"Найдено {len(results)} записей:", fg=typer.colors.GREEN)
+    typer.secho(message=f"Найдено {len(results)} записей:", fg=typer.colors.GREEN)
     for result in results:
-        typer.echo(f" - {result}")
+        typer.echo(message=f" - {result}")
 
 
 # АКЦИИ
-@share_app.command("info")
-def share_info(query: str = typer.Argument(..., help="Тикер, название, ISIN, эмитент")):
+@share_app.command(name="info")
+def share_info(
+    query: Annotated[
+        str,
+        typer.Argument(help="Тикер, название, ISIN, эмитент"),
+    ],
+) -> None:
     """
     Получение данных об акции по строке.
     """
 
     try:
-        share = get_share(query)
-        typer.secho(share, fg=typer.colors.GREEN)
+        share: Share = get_share(ticker=query)
+        typer.secho(message=share, fg=typer.colors.GREEN)
     except Exception:
-        typer.secho(f"Акция '{query}' не найдена.", fg=typer.colors.YELLOW)
+        typer.secho(message=f"Акция '{query}' не найдена.", fg=typer.colors.YELLOW)
         raise typer.Exit(code=1)
 
 
-@share_app.command("find")
-def share_find(query: str = typer.Argument(..., help="Тикер, название, ISIN, эмитент")):
+@share_app.command(name="find")
+def share_find(
+    query: Annotated[
+        str,
+        typer.Argument(..., help="Тикер, название, ISIN, эмитент"),
+    ],
+) -> None:
     """
     Синхронный поиск акций по строке.
     """
-    results = find_shares(query)
+    results: list[Search] = find_shares(query)
 
     if not results:
-        typer.secho("Ничего не найдено.", fg=typer.colors.YELLOW)
+        typer.secho(message="Ничего не найдено.", fg=typer.colors.YELLOW)
         raise typer.Exit()
 
-    typer.secho(f"Найдено {len(results)} записей:", fg=typer.colors.GREEN)
+    typer.secho(message=f"Найдено {len(results)} записей:", fg=typer.colors.GREEN)
     for result in results:
-        typer.echo(f" - {result}")
+        typer.echo(message=f" - {result}")
 
 
-@share_app.command("divs")
-def share_divs(query: str = typer.Argument(..., help="Тикер, название, ISIN, эмитент")):
+@share_app.command(name="divs")
+def share_divs(
+    query: Annotated[
+        str,
+        typer.Argument(..., help="Тикер, название, ISIN, эмитент"),
+    ],
+) -> None:
     """
     Синхронный поиск дивидендов по строке.
     """
-    results = get_dividends(query)
+    results: list[Dividend] = get_dividends(ticker=query)
 
     if not results:
-        typer.secho("Дивиденды не найдены.", fg=typer.colors.YELLOW)
+        typer.secho(message="Дивиденды не найдены.", fg=typer.colors.YELLOW)
         raise typer.Exit()
 
-    typer.secho(f"Найдено {len(results)} записей:", fg=typer.colors.GREEN)
+    typer.secho(message=f"Найдено {len(results)} записей:", fg=typer.colors.GREEN)
     for div in results:
-        typer.echo(f" - {div}")
+        typer.echo(message=f" - {div}")
 
 
 # ОБЛИГАЦИИ
-@bond_app.command("info")
-def bond_info(query: str = typer.Argument(..., help="Тикер, название, ISIN, эмитент")):
+@bond_app.command(name="info")
+def bond_info(
+    query: Annotated[
+        str,
+        typer.Argument(..., help="Тикер, название, ISIN, эмитент"),
+    ],
+) -> None:
     """
     Синхронный поиск информации об облигации по строке.
     """
 
     try:
-        bond = get_bond(query)
-        typer.secho(bond, fg=typer.colors.GREEN)
+        bond: Bond = get_bond(ticker=query)
+        typer.secho(message=bond, fg=typer.colors.GREEN)
     except Exception:
-        typer.secho(f"Облигация '{query}' не найдена.", fg=typer.colors.YELLOW)
+        typer.secho(message=f"Облигация '{query}' не найдена.", fg=typer.colors.YELLOW)
         raise typer.Exit(code=1)
 
 
-@bond_app.command("find")
-def bond_find(query: str = typer.Argument(..., help="Тикер, название, ISIN, эмитент")):
+@bond_app.command(name="find")
+def bond_find(
+    query: Annotated[
+        str,
+        typer.Argument(..., help="Тикер, название, ISIN, эмитент"),
+    ],
+) -> None:
     """
     Синхронный поиск облигаций по строке.
     """
-    results = find_bonds(query)
+    results: list[Search] = find_bonds(query)
 
     if not results:
-        typer.secho("Ничего не найдено.", fg=typer.colors.YELLOW)
+        typer.secho(message="Ничего не найдено.", fg=typer.colors.YELLOW)
         raise typer.Exit()
 
-    typer.secho(f"Найдено {len(results)} записей:", fg=typer.colors.GREEN)
+    typer.secho(message=f"Найдено {len(results)} записей:", fg=typer.colors.GREEN)
     for result in results:
-        typer.echo(f" - {result}")
+        typer.echo(message=f" - {result}")
 
 
-@bond_app.command("coupons")
+@bond_app.command(name="coupons")
 def bond_coupons(
-    query: str = typer.Argument(..., help="Тикер, название, ISIN, эмитент"),
-):
+    query: Annotated[
+        str,
+        typer.Argument(..., help="Тикер, название, ISIN, эмитент"),
+    ],
+) -> None:
     """
     Синхронный поиск купонов облигации по строке.
     """
-    results = get_coupons(query)
+    results: list[Coupon] = get_coupons(ticker=query)
 
     if not results:
-        typer.secho("Купоны не найдены.", fg=typer.colors.YELLOW)
+        typer.secho(message="Купоны не найдены.", fg=typer.colors.YELLOW)
         raise typer.Exit()
 
-    typer.secho(f"Найдено {len(results)} записей:", fg=typer.colors.GREEN)
+    typer.secho(message=f"Найдено {len(results)} записей:", fg=typer.colors.GREEN)
     for result in results:
-        typer.echo(f" - {result}")
+        typer.echo(message=f" - {result}")
 
 
 if __name__ == "__main__":

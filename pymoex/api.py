@@ -1,7 +1,8 @@
 import asyncio
 import atexit
 import threading
-from typing import Any, Callable, Coroutine, List, TypeVar
+from collections.abc import Callable, Coroutine
+from typing import Any, TypeVar
 
 from pymoex.client import MoexClient
 from pymoex.models.bond import Bond
@@ -120,7 +121,7 @@ def get_bond(ticker: str) -> Bond:
 
 def find(
     query: str, instrument_type: InstrumentType | str | None = None
-) -> List[Search]:
+) -> list[Search]:
     """
     Синхронный поиск по строке.
 
@@ -131,7 +132,7 @@ def find(
     return _run_client_call(lambda c: c.find(query, instrument_type))
 
 
-def find_shares(query: str) -> List[Search]:
+def find_shares(query: str) -> list[Search]:
     """
     Синхронный поиск акций по строке.
 
@@ -142,7 +143,7 @@ def find_shares(query: str) -> List[Search]:
     return _run_client_call(lambda c: c.find_shares(query))
 
 
-def find_bonds(query: str) -> List[Search]:
+def find_bonds(query: str) -> list[Search]:
     """
     Синхронный поиск облигаций по строке.
 
@@ -153,7 +154,7 @@ def find_bonds(query: str) -> List[Search]:
     return _run_client_call(lambda c: c.find_bonds(query))
 
 
-def find_funds(query: str) -> List[Search]:
+def find_funds(query: str) -> list[Search]:
     """
     Синхронный поиск фондов по строке.
 
@@ -163,7 +164,7 @@ def find_funds(query: str) -> List[Search]:
     return _run_client_call(lambda c: c.find_funds(query))
 
 
-def find_currencies(query: str) -> List[Search]:
+def find_currencies(query: str) -> list[Search]:
     """
     Синхронный поиск валют по строке.
 
@@ -173,7 +174,7 @@ def find_currencies(query: str) -> List[Search]:
     return _run_client_call(lambda c: c.find_currencies(query))
 
 
-def get_dividends(ticker: str) -> List[Dividend]:
+def get_dividends(ticker: str) -> list[Dividend]:
     """
     Синхронно получить историю дивидендов и будущие утвержденные выплаты по акции.
 
@@ -184,7 +185,7 @@ def get_dividends(ticker: str) -> List[Dividend]:
     return _run_client_call(lambda c: c.dividends(ticker))
 
 
-def get_coupons(ticker: str) -> List[Coupon]:
+def get_coupons(ticker: str) -> list[Coupon]:
     """
     Синхронно получить историю и график купонов по облигации.
 
@@ -195,7 +196,7 @@ def get_coupons(ticker: str) -> List[Coupon]:
     return _run_client_call(lambda c: c.coupons(ticker))
 
 
-def get_amortizations(ticker: str) -> List[Amortization]:
+def get_amortizations(ticker: str) -> list[Amortization]:
     """
     Синхронно получить график амортизации по облигации.
 

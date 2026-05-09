@@ -1,5 +1,4 @@
 from decimal import Decimal
-from typing import Optional
 
 from pydantic import Field, computed_field, model_validator
 
@@ -23,28 +22,28 @@ class Share(BaseInstrument):
     sec_id: str = Field(alias="SECID")
     """Идентификатор финансового инструмента"""
 
-    board_id: Optional[str] = Field(None, alias="BOARDID")
+    board_id: str | None = Field(None, alias="BOARDID")
     """Идентификатор режима торгов"""
 
-    isin: Optional[str] = Field(None, alias="ISIN")
+    isin: str | None = Field(None, alias="ISIN")
     """ISIN"""
 
     short_name: str = Field(alias="SHORTNAME")
     """Краткое наименование ценной бумаги"""
 
-    name: Optional[str] = Field(None, alias="SECNAME")
+    name: str | None = Field(None, alias="SECNAME")
     """Наименование финансового инструмента"""
 
-    reg_number: Optional[str] = Field(None, alias="REGNUMBER")
+    reg_number: str | None = Field(None, alias="REGNUMBER")
     """Регистрационный номер"""
 
-    status: Optional[str] = Field(None, alias="STATUS")
+    status: str | None = Field(None, alias="STATUS")
     """Статус"""
 
     list_level: MoexInt = Field(None, alias="LISTLEVEL")
     """Уровень листинга"""
 
-    sec_type: Optional[str] = Field(None, alias="SECTYPE")
+    sec_type: str | None = Field(None, alias="SECTYPE")
     """Тип ценной бумаги"""
 
     # --- Цены ---
@@ -83,7 +82,7 @@ class Share(BaseInstrument):
     """Количество сделок"""
 
     # --- Параметры ---
-    currency_id: Optional[str] = Field(None, alias="CURRENCYID")
+    currency_id: str | None = Field(None, alias="CURRENCYID")
     """Валюта торгов"""
 
     min_step: MoexDecimal = Field(None, alias="MINSTEP")
@@ -105,19 +104,19 @@ class Share(BaseInstrument):
     """Объём эмиссии"""
 
     # --- Служебная информация ---
-    trading_status: Optional[str] = Field(None, alias="TRADINGSTATUS")
+    trading_status: str | None = Field(None, alias="TRADINGSTATUS")
     """Состояние торговой сессии"""
 
     # --- Computed ---
     @computed_field
     @property
-    def reference_price(self) -> Optional[Decimal]:
+    def reference_price(self) -> Decimal | None:
         """Базовая цена для сравнения."""
         return self.prev_weighted_price or self.prev_price
 
     @computed_field
     @property
-    def effective_close(self) -> Optional[Decimal]:
+    def effective_close(self) -> Decimal | None:
         """Фактическая цена закрытия."""
         return self.close_price or self.prev_close_price
 
