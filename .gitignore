@@ -11,3 +11,7 @@ wheels/
 .env
 .idea
 .pytest_cache
+
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
