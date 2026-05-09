@@ -8,6 +8,8 @@ class InstrumentType(StrEnum):
     Используется в поиске и фильтрации:
     - SHARE — акции
     - BOND — облигации
+    - FUND - фонды
+    - CURRENCY - валюта
     """
 
     SHARE = "share"
