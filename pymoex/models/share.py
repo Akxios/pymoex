@@ -1,4 +1,5 @@
 from decimal import Decimal
+from typing import override
 
 from pydantic import Field, computed_field, model_validator
 
@@ -22,89 +23,89 @@ class Share(BaseInstrument):
     sec_id: str = Field(alias="SECID")
     """Идентификатор финансового инструмента"""
 
-    board_id: str | None = Field(None, alias="BOARDID")
+    board_id: str | None = Field(default=None, alias="BOARDID")
     """Идентификатор режима торгов"""
 
-    isin: str | None = Field(None, alias="ISIN")
+    isin: str | None = Field(default=None, alias="ISIN")
     """ISIN"""
 
     short_name: str = Field(alias="SHORTNAME")
     """Краткое наименование ценной бумаги"""
 
-    name: str | None = Field(None, alias="SECNAME")
+    name: str | None = Field(default=None, alias="SECNAME")
     """Наименование финансового инструмента"""
 
-    reg_number: str | None = Field(None, alias="REGNUMBER")
+    reg_number: str | None = Field(default=None, alias="REGNUMBER")
     """Регистрационный номер"""
 
-    status: str | None = Field(None, alias="STATUS")
+    status: str | None = Field(default=None, alias="STATUS")
     """Статус"""
 
-    list_level: MoexInt = Field(None, alias="LISTLEVEL")
+    list_level: MoexInt = Field(default=None, alias="LISTLEVEL")
     """Уровень листинга"""
 
-    sec_type: str | None = Field(None, alias="SECTYPE")
+    sec_type: str | None = Field(default=None, alias="SECTYPE")
     """Тип ценной бумаги"""
 
     # --- Цены ---
-    prev_price: MoexDecimal = Field(None, alias="PREVPRICE")
+    prev_price: MoexDecimal = Field(default=None, alias="PREVPRICE")
     """Предыдущая цена"""
 
-    prev_weighted_price: MoexDecimal = Field(None, alias="PREVWAPRICE")
+    prev_weighted_price: MoexDecimal = Field(default=None, alias="PREVWAPRICE")
     """Предыдущая средневзвешенная цена"""
 
-    prev_close_price: MoexDecimal = Field(None, alias="PREVLEGALCLOSEPRICE")
+    prev_close_price: MoexDecimal = Field(default=None, alias="PREVLEGALCLOSEPRICE")
     """Официальная цена закрытия предыдущего дня"""
 
-    close_price: MoexDecimal = Field(None, alias="CLOSEPRICE")
+    close_price: MoexDecimal = Field(default=None, alias="CLOSEPRICE")
     """Цена закрытия"""
 
-    last_price: MoexDecimal = Field(None, alias="LAST")
+    last_price: MoexDecimal = Field(default=None, alias="LAST")
     """Последняя цена сделки"""
 
-    open_price: MoexDecimal = Field(None, alias="OPEN")
+    open_price: MoexDecimal = Field(default=None, alias="OPEN")
     """Цена открытия"""
 
-    high_price: MoexDecimal = Field(None, alias="HIGH")
+    high_price: MoexDecimal = Field(default=None, alias="HIGH")
     """Максимальная цена"""
 
-    low_price: MoexDecimal = Field(None, alias="LOW")
+    low_price: MoexDecimal = Field(default=None, alias="LOW")
     """Минимальная цена"""
 
     # --- Объемы торгов ---
-    volume_today: MoexInt = Field(None, alias="VOLTODAY")
+    volume_today: MoexInt = Field(default=None, alias="VOLTODAY")
     """Объем торгов в штуках"""
 
-    value_today: MoexDecimal = Field(None, alias="VALTODAY")
+    value_today: MoexDecimal = Field(default=None, alias="VALTODAY")
     """Объем торгов в валюте (руб)"""
 
-    num_trades: MoexInt = Field(None, alias="NUMTRADES")
+    num_trades: MoexInt = Field(default=None, alias="NUMTRADES")
     """Количество сделок"""
 
     # --- Параметры ---
-    currency_id: str | None = Field(None, alias="CURRENCYID")
+    currency_id: str | None = Field(default=None, alias="CURRENCYID")
     """Валюта торгов"""
 
-    min_step: MoexDecimal = Field(None, alias="MINSTEP")
+    min_step: MoexDecimal = Field(default=None, alias="MINSTEP")
     """Шаг цены"""
 
-    decimals: MoexInt = Field(None, alias="DECIMALS")
+    decimals: MoexInt = Field(default=None, alias="DECIMALS")
     """Знаков после запятой"""
 
-    settle_date: MoexDate = Field(None, alias="SETTLEDATE")
+    settle_date: MoexDate = Field(default=None, alias="SETTLEDATE")
     """Дата расчёта"""
 
-    lot_size: MoexInt = Field(None, alias="LOTSIZE")
+    lot_size: MoexInt = Field(default=None, alias="LOTSIZE")
     """Размер лота (бумаг)"""
 
-    face_value: MoexDecimal = Field(None, alias="FACEVALUE")
+    face_value: MoexDecimal = Field(default=None, alias="FACEVALUE")
     """Номинальная стоимость одной акции"""
 
-    issue_size: MoexInt = Field(None, alias="ISSUESIZE")
+    issue_size: MoexInt = Field(default=None, alias="ISSUESIZE")
     """Объём эмиссии"""
 
     # --- Служебная информация ---
-    trading_status: str | None = Field(None, alias="TRADINGSTATUS")
+    trading_status: str | None = Field(default=None, alias="TRADINGSTATUS")
     """Состояние торговой сессии"""
 
     # --- Computed ---
@@ -123,7 +124,7 @@ class Share(BaseInstrument):
     # --- Validator ---
     @model_validator(mode="before")
     @classmethod
-    def fix_missing_prices(cls, data: dict):
+    def fix_missing_prices(cls, data: dict[str, object]) -> dict[str, object]:
         """
         Если нет цены сделки (LAST), ищем цену закрытия или цену предыдущего дня.
         """
@@ -137,6 +138,7 @@ class Share(BaseInstrument):
         return data
 
     # --- Repr ---
+    @override
     def __repr__(self) -> str:
         """Короткое человекочитаемое представление акции."""
         parts = [self.sec_id]
@@ -148,6 +150,11 @@ class Share(BaseInstrument):
             parts.append(f"price={self.last_price}")
 
         return f"<Share {' | '.join(parts)}>"
+
+    # --- Str ---
+    @override
+    def __str__(self) -> str:
+        return repr(self)
 
 
 __all__ = ["Share"]
