@@ -9,7 +9,11 @@ from .base import BaseInstrument
 
 class Currency(BaseInstrument):
     """
-    Модель валютной пары Московской биржи.
+    Модель валютной пары (инструмента) Московской биржи.
+
+    Охватывает валютные пары (например, USD/RUB, CNY/RUB) для различных
+    режимов торгов (TOD, TOM, SPT). Включает рыночные цены, объемы
+    торгов и спецификации лотов.
     """
 
     # --- Идентификация инструмента ---
@@ -92,7 +96,7 @@ class Currency(BaseInstrument):
             parts.append(self.short_name)
 
         if self.last_price is not None:
-            parts.append(f"price={self.last_price}")
+            parts.append(f"price={self.last_price:.4f}")
 
         return f"<Currency {' | '.join(parts)}>"
 

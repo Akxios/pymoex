@@ -8,7 +8,13 @@ from .base import BaseInstrument
 
 
 class Coupon(BaseInstrument):
-    """Модель купонной выплаты по облигации."""
+    """
+    Модель купонной выплаты по облигации.
+
+    Описывает параметры периодической процентной выплаты.
+    Для облигаций с переменным купоном (флоатеров) будущие значения
+    могут быть временно не определены.
+    """
 
     sec_id: str = Field(alias="secid")
     """Идентификатор финансового инструмента"""
@@ -43,7 +49,7 @@ class Coupon(BaseInstrument):
     def __repr__(self) -> str:
         """Короткое человекочитаемое представление купона."""
         val_str: str = (
-            f"{self.value} {self.face_unit or ''}".strip()
+            f"{self.value:.2f} {self.face_unit or ''}".strip()
             if self.value is not None
             else "Неизвестно"
         )
@@ -56,7 +62,13 @@ class Coupon(BaseInstrument):
 
 
 class Amortization(BaseInstrument):
-    """Модель выплаты части номинала (амортизации) по облигации."""
+    """
+    Модель выплаты части номинала (амортизации) по облигации.
+
+    Описывает частичное погашение основного долга. Каждая такая выплата
+    уменьшает непогашенный номинал бумаги, что влияет на последующие
+    процентные расходы эмитента.
+    """
 
     sec_id: str = Field(alias="secid")
     """Идентификатор финансового инструмента"""
@@ -81,7 +93,7 @@ class Amortization(BaseInstrument):
     def __repr__(self) -> str:
         """Короткое человекочитаемое представление купона и амортизации."""
         val_str = (
-            f"{self.value} {self.face_unit or ''}".strip()
+            f"{self.value:.2f} {self.face_unit or ''}".strip()
             if self.value is not None
             else "Неизвестно"
         )
