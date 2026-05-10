@@ -52,7 +52,7 @@ def parse_decimal(value: object) -> Decimal | None:
         value = value.replace(",", ".")
 
     try:
-        return Decimal(str(value))
+        return Decimal(value=str(value))
     except (TypeError, ValueError, InvalidOperation):
         return None
 
