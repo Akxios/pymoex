@@ -1,12 +1,11 @@
 import logging
 from datetime import date
 from decimal import Decimal, InvalidOperation
-from logging import Logger
 from typing import Annotated
 
 from pydantic import BeforeValidator
 
-logger: Logger = logging.getLogger(name=__name__)
+logger = logging.getLogger(name=__name__)
 
 
 def safe_date(value: object) -> date | None:
@@ -52,7 +51,7 @@ def parse_decimal(value: object) -> Decimal | None:
         value = value.replace(",", ".")
 
     try:
-        return Decimal(value=str(value))
+        return Decimal(str(value))
     except (TypeError, ValueError, InvalidOperation):
         return None
 
@@ -74,8 +73,8 @@ def parse_int(value: object) -> int | None:
         return None
 
 
-type MoexDate = Annotated[date | None, BeforeValidator(func=safe_date)]
-type MoexDecimal = Annotated[Decimal | None, BeforeValidator(func=parse_decimal)]
-type MoexInt = Annotated[int | None, BeforeValidator(func=parse_int)]
+type MoexDate = Annotated[date | None, BeforeValidator(safe_date)]
+type MoexDecimal = Annotated[Decimal | None, BeforeValidator(parse_decimal)]
+type MoexInt = Annotated[int | None, BeforeValidator(parse_int)]
 
 __all__ = ["MoexDate", "MoexDecimal", "MoexInt"]
