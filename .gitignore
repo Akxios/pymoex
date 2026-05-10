@@ -15,3 +15,5 @@ wheels/
 .vscode/*
 !.vscode/settings.json
 !.vscode/extensions.json
+
+.ruff_cache
