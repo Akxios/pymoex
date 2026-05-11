@@ -7,14 +7,12 @@ def parse_table(block: Mapping[str, object]) -> list[dict[str, object]]:
     Преобразует MOEX-таблицу в плоский список словарей.
     Гарантирует безопасный парсинг.
     """
-    # Линтер сам понимает, что тут object | None
     columns = block.get("columns")
     data = block.get("data")
 
     if not isinstance(columns, list) or not isinstance(data, list):
         return []
 
-    # Говорим линтеру, что внутри лежат объекты
     columns_list = cast(list[object], columns)
     data_list = cast(list[object], data)
 
@@ -47,7 +45,6 @@ def first_row(block: Mapping[str, object]) -> dict[str, object] | None:
     if not isinstance(first, list):
         return None
 
-    # Теперь используем правильный columns_list!
     col_names = [str(c) for c in columns_list]
     first_items = cast(list[object], first)
 

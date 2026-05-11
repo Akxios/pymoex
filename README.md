@@ -31,13 +31,14 @@ pymoex - это современная, быстрая и типизирован
 
 ## 📦 Установка
 Требуется **Python 3.12** или выше.
-Через pip:
-```bash
-pip install https://github.com/Akxios/pymoex.git
-```
+
 Через [uv](https://github.com/astral-sh/uv) (рекомендуется):
 ```bash
 uv add https://github.com/Akxios/pymoex.git
+```
+Через pip:
+```bash
+pip install https://github.com/Akxios/pymoex.git
 ```
 
 ---
