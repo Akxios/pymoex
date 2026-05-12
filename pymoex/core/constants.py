@@ -77,3 +77,10 @@ DEFAULT_SEARCH_GROUPS: frozenset[GroupName] = (
     | FUTURES_GROUPS
     | INDEX_GROUPS
 )
+
+
+class CacheTTL:
+    """Время жизни кэша для разных типов данных (в секундах)."""
+
+    BOND_TTL_SECONDS: int = 60
+    BOND_EVENTS_TTL_SECONDS: int = 3600
