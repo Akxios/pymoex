@@ -1,6 +1,12 @@
 import logging
+from typing import cast
+
+from pydantic import BaseModel
 
 from pymoex.core import endpoints
+from pymoex.core.constants import CacheTTL
+from pymoex.core.interfaces import ICache
+from pymoex.core.session import MoexSession
 from pymoex.exceptions import InstrumentNotFoundError
 from pymoex.models.bond import Bond
 from pymoex.models.bondization import Amortization, Coupon
@@ -10,91 +16,127 @@ from pymoex.utils.table import parse_table
 logger = logging.getLogger(__name__)
 
 
+def _normalize_ticker(ticker: str) -> str:
+    return ticker.strip().upper()
+
+
+def _get_table(data: dict[str, object], name: str) -> dict[str, object]:
+    table = data.get(name)
+
+    if isinstance(table, dict):
+        return cast(dict[str, object], table)
+
+    return {}
+
+
 class BondsService:
     """
     Сервис для получения данных по облигациям.
     """
 
-    def __init__(self, session, cache):
-        self.session = session
-        self.cache = cache
+    def __init__(self, session: MoexSession, cache: ICache) -> None:
+        self.session: MoexSession = session
+        self.cache: ICache = cache
 
     async def get_bond(self, ticker: str) -> Bond:
-        ticker = ticker.upper()
+        ticker = _normalize_ticker(ticker)
         cache_key = f"bond:{ticker}"
 
-        async def _fetch():
-            return await self._load_bond(ticker)
+        async def _fetch() -> Bond:
+            data = await self.session.get(endpoints.bond(ticker))
+            return self._build_bond(ticker, data)
 
-        return await self.cache.get_or_set(cache_key, _fetch, ttl=60)
-
-    async def _load_bond(self, ticker: str) -> Bond:
-        data = await self.session.get(endpoints.bond(ticker))
-
-        if not data.get("securities", {}).get("data"):
-            logger.warning(f"Bond {ticker} not found in MOEX response")
-            raise InstrumentNotFoundError(f"Bond {ticker} not found")
-
-        # Парсим таблицы
-        sec_rows = parse_table(data["securities"])
-        md_rows = parse_table(data.get("marketdata", {}))
-        yield_rows = parse_table(data.get("marketdata_yields", {}))
-
-        priority_boards = self.session.settings.preferred_bond_boards
-
-        target_board = select_best_board(
-            sec_rows=sec_rows, md_rows=md_rows, priority_boards=priority_boards
+        return await self.cache.get_or_set(
+            cache_key, _fetch, ttl=CacheTTL.BOND_TTL_SECONDS
         )
-
-        logger.debug(f"Selected board '{target_board}' for bond {ticker}")
-
-        # Берем данные именно для выбранного борда
-        security = next(
-            (r for r in sec_rows if r["BOARDID"] == target_board), sec_rows[0]
-        )
-        market_data = next((r for r in md_rows if r["BOARDID"] == target_board), {})
-        yield_data = next((r for r in yield_rows if r["BOARDID"] == target_board), {})
-
-        # Объединяем (statik < yield < market)
-        combined_data = {**security, **yield_data, **market_data}
-
-        return Bond.model_validate(combined_data)
 
     async def get_coupons(self, ticker: str) -> list[Coupon]:
         """
         Получить историю и график будущих купонов по облигации.
         """
-        ticker = ticker.upper()
-        cache_key = f"coupons:{ticker}"
-
-        async def _fetch():
-            data = await self.session.get(endpoints.bondization(ticker))
-
-            if not data.get("coupons", {}).get("data"):
-                logger.info(f"No coupons found for {ticker}")
-                return []
-
-            rows = parse_table(data["coupons"])
-            return [Coupon.model_validate(row) for row in rows]
-
-        # События меняются редко, кэшируем на час
-        return await self.cache.get_or_set(cache_key, _fetch, ttl=3600)
+        ticker = _normalize_ticker(ticker)
+        return await self._get_bond_event_rows(
+            ticker=ticker,
+            table_name="coupons",
+            model=Coupon,
+        )
 
     async def get_amortizations(self, ticker: str) -> list[Amortization]:
         """
         Получить график амортизации (выплаты номинала) по облигации.
         """
-        ticker = ticker.upper()
-        cache_key = f"amortizations:{ticker}"
+        ticker = _normalize_ticker(ticker)
+        return await self._get_bond_event_rows(
+            ticker=ticker,
+            table_name="amortizations",
+            model=Amortization,
+        )
 
-        async def _fetch():
-            data = await self.session.get(endpoints.bondization(ticker))
+    def _build_bond(self, ticker: str, data: dict[str, object]) -> Bond:
+        securities = _get_table(data, "securities")
 
-            if not data.get("amortizations", {}).get("data"):
-                logger.info(f"No amortizations found for {ticker}")
-                return []
+        if not securities.get("data"):
+            logger.warning("Bond %s not found in MOEX response", ticker)
+            raise InstrumentNotFoundError(f"Bond {ticker} not found")
 
-            rows = parse_table(data["amortizations"])
-            return [Amortization.model_validate(row) for row in rows]
+        sec_rows = parse_table(securities)
+        md_rows = parse_table(_get_table(data, "marketdata"))
+        yield_rows = parse_table(_get_table(data, "marketdata_yields"))
 
-        return await self.cache.get_or_set(cache_key, _fetch, ttl=3600)
+        if not sec_rows:
+            logger.warning("Bond %s has empty securities table", ticker)
+            raise InstrumentNotFoundError(f"Bond {ticker} not found")
+
+        target_board = select_best_board(
+            sec_rows=sec_rows,
+            md_rows=md_rows,
+            priority_boards=self.session.settings.preferred_bond_boards,
+        )
+
+        logger.debug("Selected board %r for bond %s", target_board, ticker)
+
+        security = self._find_row_by_board(sec_rows, target_board) or sec_rows[0]
+        market_data = self._find_row_by_board(md_rows, target_board) or {}
+        yield_data = self._find_row_by_board(yield_rows, target_board) or {}
+
+        combined_data = {**security, **yield_data, **market_data}
+
+        return Bond.model_validate(combined_data)
+
+    async def _get_bond_events(self, ticker: str) -> dict[str, object]:
+        cache_key = f"bond_events:{ticker}"
+
+        async def _fetch() -> dict[str, object]:
+            return await self.session.get(endpoints.bond_events(ticker))
+
+        return await self.cache.get_or_set(
+            cache_key,
+            _fetch,
+            ttl=CacheTTL.BOND_EVENTS_TTL_SECONDS,
+        )
+
+    async def _get_bond_event_rows[TModel: BaseModel](
+        self,
+        ticker: str,
+        table_name: str,
+        model: type[TModel],
+    ) -> list[TModel]:
+        data = await self._get_bond_events(ticker)
+        table = _get_table(data, table_name)
+
+        if not table.get("data"):
+            logger.info("No %s found for %s", table_name, ticker)
+            return []
+
+        rows = parse_table(table)
+        return [model.model_validate(row) for row in rows]
+
+    @staticmethod
+    def _find_row_by_board(
+        rows: list[dict[str, object]],
+        board_id: object,
+    ) -> dict[str, object] | None:
+        return next(
+            (row for row in rows if row.get("BOARDID") == board_id),
+            None,
+        )
