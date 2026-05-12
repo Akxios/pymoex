@@ -1,11 +1,7 @@
-from pathlib import Path
 from typing import ClassVar
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
-
-# Корень проекта (используется для поиска .env)
-BASE_DIR = Path(__file__).resolve().parents[2]
 
 
 class MoexSettings(BaseSettings):
@@ -17,39 +13,31 @@ class MoexSettings(BaseSettings):
     - из файла .env в корне проекта
 
     Поддерживаемые переменные окружения:
-    - BASE_URL       (базовый URL ISS API)
-    - TIMEOUT        (таймаут HTTP-запросов в секундах)
-    - USER_AGENT     (User-Agent клиента)
-    - LOG_LEVEL      (уровень логирования)
-    - REQUEST_DELAY  (базовая задержка между запросами, сек)
-    - REQUEST_JITTER (случайный jitter к задержке, сек)
+    - MOEX_BASE_URL       (базовый URL ISS API)
+    - MOEX_TIMEOUT        (таймаут HTTP-запросов в секундах)
+    - MOEX_USER_AGENT     (User-Agent клиента)
+    - MOEX_LOG_LEVEL      (уровень логирования)
+    - MOEX_REQUEST_DELAY  (базовая задержка между запросами, сек)
+    - MOEX_REQUEST_JITTER (случайный jitter к задержке, сек)
+    - MOEX_PROXY_URL      (ссылка на прокси)
+    - MOEX_USERNAME       (имя пользователя)
+    - MOEX_PASSWORD       (пароль пользователя)
+    - MOEX_RETRY_ATTEMPTS (число попыток)
+    - MOEX_RETRY_MIN_WAIT (минимальное ожидание, сек)
+    - MOEX_RETRY_MAX_WAIT (максимальное ожидание, сек)
 
     """
 
-    # Базовый URL API Московской биржи
     base_url: str = "https://iss.moex.com/iss"
-
-    # Таймаут сетевых запросов (секунды)
-    timeout: int = 10
-
-    # User-Agent для идентификации SDK
+    timeout: float = Field(default=10.0, gt=0)
     user_agent: str = "pymoex-sdk/0.1.6"
-
-    # Уровень логирования
     log_level: str = "WARNING"
 
-    # Минимальная задержка между запросами (в секундах)
-    # Чтобы не словить бан по IP
-    request_delay: float = 0.1
+    request_delay: float = Field(default=0.1, ge=0)
+    request_jitter: float = Field(default=0.5, ge=0)
 
-    # Случайный jitter (в секундах), добавляемый к базовой задержке
-    # Можно отключить, установив 0
-    request_jitter: float = 0.05
-
-    # Прокси для запросов
     proxy_url: str | None = None
 
-    # Учетные данные
     username: str | None = None
     password: str | None = None
 
@@ -63,21 +51,16 @@ class MoexSettings(BaseSettings):
         default_factory=lambda: ["CETS", "CNGD", "SNDX"]
     )
 
-    # Tenacity
+    retry_attempts: int = Field(default=3, ge=1)
+    retry_min_wait: float = Field(default=1.0, ge=0)
+    retry_max_wait: float = Field(default=10.0, ge=0)
 
-    retry_attempts: int = 3
-    retry_min_wait: float = 1
-    retry_max_wait: float = 10
-
-    # Конфигурация pydantic-settings
     model_config: ClassVar[SettingsConfigDict] = SettingsConfigDict(
-        env_prefix="MOEX_",  # префикс переменных окружения
-        env_file=BASE_DIR / ".env",  # путь к .env файлу
-        env_file_encoding="utf-8",  # кодировка файла
-        extra="ignore",  # игнорировать неизвестные переменные окружения
+        env_prefix="MOEX_",
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
     )
 
 
-# Глобальный синглтон настроек.
-# Используется всеми сервисами и сессиями SDK.
 settings = MoexSettings()
