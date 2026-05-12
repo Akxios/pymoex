@@ -63,6 +63,12 @@ class MoexSettings(BaseSettings):
         default_factory=lambda: ["CETS", "CNGD", "SNDX"]
     )
 
+    # Tenacity
+
+    retry_attempts: int = 3
+    retry_min_wait: float = 1
+    retry_max_wait: float = 10
+
     # Конфигурация pydantic-settings
     model_config: ClassVar[SettingsConfigDict] = SettingsConfigDict(
         env_prefix="MOEX_",  # префикс переменных окружения
