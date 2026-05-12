@@ -7,7 +7,6 @@ from urllib.parse import quote
 STOCK_ENGINE = "stock"
 CURRENCY_ENGINE = "currency"
 
-
 STOCK_MARKET_BASE = f"/engines/{STOCK_ENGINE}/markets"
 
 
