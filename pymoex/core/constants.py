@@ -4,55 +4,75 @@
 https://iss.moex.com/iss/index.json (блок securitygroups)
 """
 
-# --- РЫНОК АКЦИЙ (Equity) ---
-MOEX_SHARE_GROUPS = {
-    "stock_shares",  # Основные акции
-    "stock_foreign_shares",  # Иностранные акции
-    "stock_dr",  # Депозитарные расписки
-}
+type GroupName = str
 
-# --- ФОНДЫ (ETFs и ПИФы) ---
-MOEX_FUND_GROUPS = {
-    "stock_etf",  # Биржевые фонды
-    "stock_ppif",  # Паи ПИФов
-}
+SHARE_GROUPS: frozenset[GroupName] = frozenset(
+    {
+        "stock_shares",  # Основные акции
+        "stock_foreign_shares",  # Иностранные акции
+        "stock_dr",  # Депозитарные расписки
+    }
+)
 
-# --- РЫНОК ОБЛИГАЦИЙ ---
-MOEX_BOND_GROUPS = {
-    "stock_bonds",  # Основная группа
-    "stock_eurobond",  # Еврооблигации
-}
 
-# --- ВАЛЮТНЫЙ РЫНОК ---
-MOEX_CURRENCY_GROUPS = {
-    "currency_selt",  # Биржевая валюта
-    "currency_metal",  # Драгоценные металлы
-    "currency_indices",  # Валютные фиксинги
-    "currency_otcindices",  # Внебиржевые валютные индексы
-}
+FUND_GROUPS: frozenset[GroupName] = frozenset(
+    {
+        "stock_etf",  # Биржевые фонды
+        "stock_ppif",  # Паи ПИФов
+    }
+)
 
-# --- СРОЧНЫЙ РЫНОК  ---
-MOEX_FUTURES_GROUPS = {
-    "futures_forts",  # Фьючерсы
-    "futures_options",  # Опционы на фьючерсы
-    "currency_futures",  # Валютные фьючерсы
-}
 
-# --- ИНДЕКСЫ ---
-MOEX_INDEX_GROUPS = {
-    "stock_index",  # Индексы акций
-}
+BOND_GROUPS: frozenset[GroupName] = frozenset(
+    {
+        "stock_bonds",  # Основная группа
+        "stock_eurobond",  # Еврооблигации
+    }
+)
 
-# --- СПЕЦИФИЧЕСКИЕ И ПРОЧИЕ ИНСТРУМЕНТЫ ---
-# Обычно не нужны в общем поиске, но могут пригодиться
-MOEX_SPECIAL_GROUPS = {
-    "stock_deposit",  # Депозиты с ЦК (Денежный рынок)
-    "stock_qnv",  # Инструменты для квалифицированных инвесторов
-    "stock_gcc",  # Клиринговые сертификаты участия (КСУ)
-    "stock_mortgage",  # Ипотечные сертификаты
-}
 
-# --- КОМБИНИРОВАННЫЕ ГРУППЫ (Для удобства поиска) ---
+CURRENCY_GROUPS: frozenset[GroupName] = frozenset(
+    {
+        "currency_selt",  # Биржевая валюта
+        "currency_metal",  # Драгоценные металлы
+        "currency_indices",  # Валютные фиксинги
+        "currency_otcindices",  # Внебиржевые валютные индексы
+    }
+)
 
-# Если пользователь ищет "Акции", он скорее всего хочет видеть и Фонды тоже
-ALL_EQUITY_SEARCH = MOEX_SHARE_GROUPS | MOEX_FUND_GROUPS
+
+FUTURES_GROUPS: frozenset[GroupName] = frozenset(
+    {
+        "futures_forts",  # Фьючерсы
+        "futures_options",  # Опционы на фьючерсы
+        "currency_futures",  # Валютные фьючерсы
+    }
+)
+
+
+INDEX_GROUPS: frozenset[GroupName] = frozenset(
+    {
+        "stock_index",  # Индексы акций
+    }
+)
+
+SPECIAL_GROUPS: frozenset[GroupName] = frozenset(
+    {
+        "stock_deposit",  # Депозиты с ЦК
+        "stock_qnv",  # Инструменты для квалифицированных инвесторов
+        "stock_gcc",  # Клиринговые сертификаты участия
+        "stock_mortgage",  # Ипотечные сертификаты
+    }
+)
+
+EQUITY_SEARCH_GROUPS: frozenset[GroupName] = SHARE_GROUPS | FUND_GROUPS
+
+
+DEFAULT_SEARCH_GROUPS: frozenset[GroupName] = (
+    SHARE_GROUPS
+    | FUND_GROUPS
+    | BOND_GROUPS
+    | CURRENCY_GROUPS
+    | FUTURES_GROUPS
+    | INDEX_GROUPS
+)
