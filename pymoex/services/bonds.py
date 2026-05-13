@@ -1,5 +1,4 @@
 import logging
-from typing import cast
 
 from pydantic import BaseModel
 
@@ -11,22 +10,14 @@ from pymoex.exceptions import InstrumentNotFoundError
 from pymoex.models.bond import Bond
 from pymoex.models.bondization import Amortization, Coupon
 from pymoex.utils.boards import select_best_board
+from pymoex.utils.response import (
+    find_row_by_board,
+    get_table,
+    normalize_ticker,
+)
 from pymoex.utils.table import parse_table
 
 logger = logging.getLogger(__name__)
-
-
-def _normalize_ticker(ticker: str) -> str:
-    return ticker.strip().upper()
-
-
-def _get_table(data: dict[str, object], name: str) -> dict[str, object]:
-    table = data.get(name)
-
-    if isinstance(table, dict):
-        return cast(dict[str, object], table)
-
-    return {}
 
 
 class BondsService:
@@ -39,7 +30,7 @@ class BondsService:
         self.cache: ICache = cache
 
     async def get_bond(self, ticker: str) -> Bond:
-        ticker = _normalize_ticker(ticker)
+        ticker = normalize_ticker(ticker)
         cache_key = f"bond:{ticker}"
 
         async def _fetch() -> Bond:
@@ -54,7 +45,7 @@ class BondsService:
         """
         Получить историю и график будущих купонов по облигации.
         """
-        ticker = _normalize_ticker(ticker)
+        ticker = normalize_ticker(ticker)
         return await self._get_bond_event_rows(
             ticker=ticker,
             table_name="coupons",
@@ -65,7 +56,7 @@ class BondsService:
         """
         Получить график амортизации (выплаты номинала) по облигации.
         """
-        ticker = _normalize_ticker(ticker)
+        ticker = normalize_ticker(ticker)
         return await self._get_bond_event_rows(
             ticker=ticker,
             table_name="amortizations",
@@ -73,15 +64,15 @@ class BondsService:
         )
 
     def _build_bond(self, ticker: str, data: dict[str, object]) -> Bond:
-        securities = _get_table(data, "securities")
+        securities = get_table(data, "securities")
 
         if not securities.get("data"):
             logger.warning("Bond %s not found in MOEX response", ticker)
             raise InstrumentNotFoundError(f"Bond {ticker} not found")
 
         sec_rows = parse_table(securities)
-        md_rows = parse_table(_get_table(data, "marketdata"))
-        yield_rows = parse_table(_get_table(data, "marketdata_yields"))
+        md_rows = parse_table(get_table(data, "marketdata"))
+        yield_rows = parse_table(get_table(data, "marketdata_yields"))
 
         if not sec_rows:
             logger.warning("Bond %s has empty securities table", ticker)
@@ -95,9 +86,9 @@ class BondsService:
 
         logger.debug("Selected board %r for bond %s", target_board, ticker)
 
-        security = self._find_row_by_board(sec_rows, target_board) or sec_rows[0]
-        market_data = self._find_row_by_board(md_rows, target_board) or {}
-        yield_data = self._find_row_by_board(yield_rows, target_board) or {}
+        security = find_row_by_board(sec_rows, target_board) or sec_rows[0]
+        market_data = find_row_by_board(md_rows, target_board) or {}
+        yield_data = find_row_by_board(yield_rows, target_board) or {}
 
         combined_data = {**security, **yield_data, **market_data}
 
@@ -122,7 +113,7 @@ class BondsService:
         model: type[TModel],
     ) -> list[TModel]:
         data = await self._get_bond_events(ticker)
-        table = _get_table(data, table_name)
+        table = get_table(data, table_name)
 
         if not table.get("data"):
             logger.info("No %s found for %s", table_name, ticker)
@@ -130,13 +121,3 @@ class BondsService:
 
         rows = parse_table(table)
         return [model.model_validate(row) for row in rows]
-
-    @staticmethod
-    def _find_row_by_board(
-        rows: list[dict[str, object]],
-        board_id: object,
-    ) -> dict[str, object] | None:
-        return next(
-            (row for row in rows if row.get("BOARDID") == board_id),
-            None,
-        )
