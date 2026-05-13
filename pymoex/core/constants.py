@@ -84,3 +84,6 @@ class CacheTTL:
 
     BOND_TTL_SECONDS: int = 60
     BOND_EVENTS_TTL_SECONDS: int = 3600
+
+    SHARE_TTL_SECONDS: int = 60
+    SHARE_EVENT_TTL_SECONDS: int = 3600
