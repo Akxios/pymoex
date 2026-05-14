@@ -1,8 +1,7 @@
 from collections.abc import Awaitable, Callable
-from typing import Protocol, runtime_checkable
+from typing import Protocol
 
 
-@runtime_checkable
 class ICache(Protocol):
     """
     Интерфейс кэша для pymoex.

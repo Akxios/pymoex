@@ -4,7 +4,7 @@ import random
 import time
 from collections.abc import Mapping
 from types import TracebackType
-from typing import Self
+from typing import Self, cast
 
 import httpx
 from tenacity import (
@@ -86,7 +86,7 @@ class MoexSession:
 
     async def _apply_rate_limit(self) -> None:
         """
-        Гарантирует, что между отправкой запросов проходит не менее request_delay секунд.
+        Гарантирует, что между отправкой запросов проходит не менее request_delay секунд
         Выстраивает конкурентные запросы в честную очередь.
         """
         delay = self.settings.request_delay
@@ -144,7 +144,7 @@ class MoexSession:
         )
 
         response = await self.client.get(path, params=query)
-        response.raise_for_status()
+        _ = response.raise_for_status()
         return response
 
     async def get(self, path: str, params: QueryParams = None) -> dict[str, object]:
@@ -183,7 +183,7 @@ class MoexSession:
             raise MoexNetworkError(f"Network error accessing {path}: {e}") from e
 
         try:
-            raw_data = response.json()
+            raw_data = cast(object, response.json())
         except ValueError as e:
             logger.error("Response parse error for %s: %s", path, e)
             raise MoexResponseParseError(
@@ -200,7 +200,7 @@ class MoexSession:
                 f"Expected JSON object for {path}, got {type(raw_data).__name__}"
             )
 
-        return raw_data
+        return cast(dict[str, object], raw_data)
 
     async def close(self) -> None:
         """Корректно закрываем HTTP-сессию."""
