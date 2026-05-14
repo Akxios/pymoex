@@ -3,6 +3,7 @@ from typing import Annotated
 import typer
 from typer.main import Typer
 
+from pymoex import get_currency
 from pymoex.api import (
     find,
     find_bonds,
@@ -18,15 +19,15 @@ from pymoex.models.dividend import Dividend
 from pymoex.models.enums import InstrumentType
 from pymoex.models.search import Search
 from pymoex.models.share import Share
+from pymoex.utils.aliases import resolve_currency_secid
 
 app: Typer = typer.Typer(help="Утилита для работы с данными Московской биржи")
 
 
-# search_app: Typer = typer.Typer(help="Работа с поиском")
 share_app: Typer = typer.Typer(help="Работа с акциями")
 bond_app: Typer = typer.Typer(help="Работа с облигациями")
 
-# app.add_typer(typer_instance=search_app, name="search")
+
 app.add_typer(typer_instance=share_app, name="share")
 app.add_typer(typer_instance=bond_app, name="bond")
 
@@ -182,6 +183,34 @@ def bond_coupons(
     typer.secho(message=f"Найдено {len(results)} записей:", fg=typer.colors.GREEN)
     for result in results:
         typer.echo(message=f" - {result}")
+
+
+# ВАЛЮТА
+@app.command("currency")
+def currency(
+    query: Annotated[
+        str,
+        typer.Argument(..., help="Код валюты"),
+    ],
+) -> None:
+    """
+    Получение курса валюты или металла.
+    """
+
+    real_secid = resolve_currency_secid(query)
+
+    try:
+        currency_model = get_currency(ticker=real_secid)
+
+        typer.secho(f"Данные по {query.upper()} ({real_secid}):", fg=typer.colors.CYAN)
+        typer.secho(str(currency_model), fg=typer.colors.GREEN)
+
+    except Exception as e:  # <--- ДОБАВЛЕНО as e
+        typer.secho(
+            f"Валюта '{query}' (secid: {real_secid}) не найдена. Причина: {e}",  # <--- ВЫВОДИМ e
+            fg=typer.colors.YELLOW,
+        )
+        raise typer.Exit(code=1)
 
 
 if __name__ == "__main__":
