@@ -89,3 +89,4 @@ class CacheTTL:
     SHARE_EVENT_TTL_SECONDS: int = 3600
 
     SEARCH_TTL_SECONDS: int = 300
+    COUNT_RESULTS: int = 20
