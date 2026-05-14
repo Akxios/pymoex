@@ -1,0 +1,86 @@
+import asyncio
+from decimal import Decimal
+
+from pymoex import MoexClient
+from pymoex.exceptions import InstrumentNotFoundError
+from pymoex.models.bond import Bond
+
+
+def format_value(value: object | None, suffix: str | None = None) -> str:
+    """
+    Красиво форматирует значение для вывода в консоль.
+    """
+    if value is None:
+        return "—"
+
+    if isinstance(value, Decimal):
+        text = f"{value:.4f}".rstrip("0").rstrip(".")
+    else:
+        text = str(value)
+
+    if suffix:
+        return f"{text} {suffix}"
+
+    return text
+
+
+async def show_bond(client: MoexClient, ticker: str) -> None:
+    """
+    Показать данные по облигации, купоны и амортизацию.
+    """
+    try:
+        bond: Bond = await client.bond(ticker)
+    except InstrumentNotFoundError:
+        print(f"Облигация {ticker} не найдена.")
+        return
+
+    print("--- Облигация ---")
+    print(f"Тикер: {bond.sec_id}")
+    print(f"Название: {bond.short_name}")
+    print(f"Полное название: {bond.name or '—'}")
+    print(f"Режим торгов: {bond.board_id or '—'}")
+    print(f"Цена, % от номинала: {format_value(bond.price_percent, '%')}")
+    print(f"Расчётная цена: {format_value(bond.last_price, bond.face_unit)}")
+    print(f"НКД: {format_value(bond.accruedint, bond.face_unit)}")
+    print(f"Грязная цена: {format_value(bond.last_dirty_price, bond.face_unit)}")
+    print(f"Эффективная доходность: {format_value(bond.effective_yield, '%')}")
+    print(f"Ближайший купон: {bond.next_coupon or '—'}")
+    print(f"Размер купона: {format_value(bond.coupon_value, bond.face_unit)}")
+    print(f"Дата погашения: {bond.mat_date or '—'}")
+
+    coupons = await client.coupons(ticker)
+
+    print("\nБлижайшие купоны:")
+
+    if not coupons:
+        print("Купоны не найдены.")
+    else:
+        for coupon in coupons[:5]:
+            print(
+                " - "
+                f"{coupon.coupon_date}: "
+                f"{format_value(coupon.value, coupon.face_unit)}"
+            )
+
+    amortizations = await client.amortizations(ticker)
+
+    print("\nГрафик амортизации:")
+
+    if not amortizations:
+        print("Без амортизации или данные не найдены.")
+    else:
+        for amortization in amortizations:
+            print(
+                " - "
+                f"{amortization.amort_date}: "
+                f"погашение {format_value(amortization.value, amortization.face_unit)}"
+            )
+
+
+async def main() -> None:
+    async with MoexClient() as client:
+        await show_bond(client, "RU000A10DS74")
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
