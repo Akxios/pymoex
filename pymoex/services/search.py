@@ -165,7 +165,7 @@ class SearchService:
             reverse=True,
         )
 
-        return [row for _, row in scored][:20]
+        return [row for _, row in scored][: CacheTTL.COUNT_RESULTS]
 
     @staticmethod
     def _deduplicate_by_secid(raw: list[Row]) -> list[Row]:
