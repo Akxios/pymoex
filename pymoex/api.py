@@ -1,8 +1,9 @@
 import asyncio
 import atexit
 import threading
-from collections.abc import Callable, Coroutine
-from typing import Any, TypeVar
+from collections.abc import Awaitable, Callable
+from concurrent.futures import TimeoutError as FutureTimeoutError
+from contextlib import suppress
 
 from pymoex.client import MoexClient
 from pymoex.models.bond import Bond
@@ -13,86 +14,116 @@ from pymoex.models.enums import InstrumentType
 from pymoex.models.search import Search
 from pymoex.models.share import Share
 
-T = TypeVar("T")
+
+async def _await_result[T](awaitable: Awaitable[T]) -> T:
+    return await awaitable
+
+
+def _ensure_no_running_loop() -> None:
+    try:
+        _ = asyncio.get_running_loop()
+    except RuntimeError:
+        return
+
+    message = (
+        "Cannot use sync API when an event loop is running. "
+        "Use MoexClient (async API) instead."
+    )
+    raise RuntimeError(message)
 
 
 class _SyncManager:
     """
     Менеджер фонового цикла событий для синхронного API.
-    Обеспечивает жизнь единого MoexClient (и его кэша/сессии) между вызовами.
+    Обеспечивает жизнь единого MoexClient между вызовами.
     """
 
-    def __init__(self):
-        self._loop = asyncio.new_event_loop()
-        self._thread = threading.Thread(
-            target=self._run_loop, name="PymoexSyncThread", daemon=True
+    def __init__(self) -> None:
+        self._loop: asyncio.AbstractEventLoop = asyncio.new_event_loop()
+        self._thread: threading.Thread = threading.Thread(
+            target=self._run_loop,
+            name="PymoexSyncThread",
+            daemon=True,
         )
+        self._closed: bool = False
+
         self._thread.start()
 
-        # Инициализируем клиента внутри фонового цикла
         future = asyncio.run_coroutine_threadsafe(self._init_client(), self._loop)
-        self.client = future.result()
+        self.client: MoexClient = future.result()
 
-        # Регистрируем хук для корректного закрытия сессий при выходе
-        atexit.register(self.shutdown)
+        _ = atexit.register(self.shutdown)
 
-    def _run_loop(self):
+    @property
+    def is_closed(self) -> bool:
+        """Свойство для безопасной проверки статуса менеджера."""
+        return self._closed
+
+    def _run_loop(self) -> None:
         asyncio.set_event_loop(self._loop)
         self._loop.run_forever()
 
     async def _init_client(self) -> MoexClient:
         return MoexClient()
 
-    async def _close_client(self):
+    async def _close_client(self) -> None:
         await self.client.close()
 
-    def shutdown(self):
+    def shutdown(self) -> None:
         """Остановка цикла и закрытие HTTP-сессии."""
+
+        if self._closed:
+            return
+
+        self._closed = True
+
         if self._loop.is_running():
             future = asyncio.run_coroutine_threadsafe(self._close_client(), self._loop)
-            try:
+
+            with suppress(FutureTimeoutError, RuntimeError):
                 future.result(timeout=2)
-            except Exception:
-                pass
-            self._loop.call_soon_threadsafe(self._loop.stop)
+
+            _ = self._loop.call_soon_threadsafe(self._loop.stop)
 
         if self._thread.is_alive():
             self._thread.join(timeout=2)
 
-    def execute(self, coro: Coroutine[Any, Any, T]) -> T:
+        if not self._loop.is_closed() and not self._thread.is_alive():
+            self._loop.close()
+
+    def execute[T](self, awaitable: Awaitable[T]) -> T:
         """Запуск корутины в фоновом потоке с ожиданием результата."""
 
-        # Проверяем, не запущен ли уже event loop в текущем потоке (FastAPI, Jupyter)
-        try:
-            asyncio.get_running_loop()
-        except RuntimeError:
-            pass
-        else:
-            raise RuntimeError(
-                "Cannot use sync API when an event loop is running. "
-                "Use MoexClient (async API) instead."
-            )
+        if self._closed:
+            raise RuntimeError("Sync manager is already closed.")
 
-        future = asyncio.run_coroutine_threadsafe(coro, self._loop)
+        future = asyncio.run_coroutine_threadsafe(
+            _await_result(awaitable),
+            self._loop,
+        )
+
         return future.result()
 
 
-# Глобальный экземпляр менеджера
-_manager = None
+_manager: _SyncManager | None = None
 
 
 def _get_manager() -> _SyncManager:
     global _manager
-    if _manager is None:
+
+    if _manager is None or _manager.is_closed:
         _manager = _SyncManager()
+
     return _manager
 
 
-def _run_client_call(func: Callable[[MoexClient], Coroutine[Any, Any, T]]) -> T:
+def _run_client_call[T](func: Callable[[MoexClient], Awaitable[T]]) -> T:
     """
     Выполняет асинхронный вызов, переиспользуя глобальный клиент
     в фоновом потоке, чтобы сохранить кэш и пул соединений.
     """
+    _ensure_no_running_loop()
+
     manager = _get_manager()
     return manager.execute(func(manager.client))
 
