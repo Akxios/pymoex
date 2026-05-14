@@ -90,3 +90,5 @@ class CacheTTL:
 
     SEARCH_TTL_SECONDS: int = 300
     COUNT_RESULTS: int = 20
+
+    CURRENCY_TTL_SECONDS: int = 60
