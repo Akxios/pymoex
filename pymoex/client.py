@@ -1,3 +1,6 @@
+from types import TracebackType
+from typing import Self
+
 from pymoex.core.cache import MemoryCache, NullCache
 from pymoex.core.interfaces import ICache
 from pymoex.core.session import MoexSession
@@ -23,98 +26,71 @@ class MoexClient:
         self,
         cache: ICache | None = None,
         use_cache: bool = True,
-    ):
-        """
-        Инициализация клиента.
+    ) -> None:
+        self.session: MoexSession = MoexSession()
 
-        :param cache: Объект кэша, реализующий интерфейс ICache (например, Redis).
-                      Если None, будет создан встроенный MemoryCache.
-        :param use_cache: Если False, кэширование будет полностью отключено (используется NullCache).
-        """
-
-        self.session = MoexSession()
-
-        # Логика выбора стратегии кэширования
         if not use_cache:
-            self._cache = NullCache()
+            self._cache: ICache = NullCache()
         elif cache is not None:
             self._cache = cache
         else:
-            # Дефолтный кэш: храним в памяти, 1000 элементов, TTL 60 сек
             self._cache = MemoryCache(ttl=60, maxsize=1000)
 
-        # Передаем единый инстанс кэша во все сервисы.
-        # Сервисы сами формируют уникальные ключи (например 'share:SBER', 'bond:OFZ...').
-        self.shares = SharesService(self.session, self._cache)
-        self.bonds = BondsService(self.session, self._cache)
-        self.currencies = CurrenciesService(self.session, self._cache)
-        self.search = SearchService(self.session, self._cache)
+        self.shares: SharesService = SharesService(self.session, self._cache)
+        self.bonds: BondsService = BondsService(self.session, self._cache)
+        self.currencies: CurrenciesService = CurrenciesService(
+            self.session, self._cache
+        )
+        self.search: SearchService = SearchService(self.session, self._cache)
 
     async def close(self) -> None:
-        """
-        Закрыть HTTP-сессию и очистить ресурсы кэша.
-        """
-        if self._cache:
-            await self._cache.clear()
+        """Закрыть HTTP-сессию и очистить ресурсы кэша."""
 
-        if self.session:
-            await self.session.close()
+        await self._cache.clear()
+        await self.session.close()
+
+    async def __aenter__(self) -> Self:
+        return self
+
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc: BaseException | None,
+        tb: TracebackType | None,
+    ) -> None:
+        await self.close()
 
     async def share(self, ticker: str) -> Share:
-        """
-        Получить данные по акции.
-
-        :param ticker: тикер (например, 'SBER')
-        :return: модель Share
-        """
+        """Получить данные по акции."""
         return await self.shares.get_share(ticker)
 
     async def bond(self, ticker: str) -> Bond:
-        """
-        Получить данные по облигации.
-
-        :param ticker: ISIN или торговый код
-        :return: модель Bond
-        """
+        """Получить данные по облигации."""
         return await self.bonds.get_bond(ticker)
 
     async def fund(self, ticker: str) -> Share:
         """
-        Получить данные по биржевому фонду (ETF, БПИФ).
-        Под капотом использует тот же API, что и для акций.
+        Получить данные по биржевому фонду.
         """
 
         return await self.shares.get_share(ticker)
 
     async def currency(self, ticker: str) -> Currency:
-        """
-        Получить данные по валютной паре.
-        :param ticker: тикер (например, 'CNYRUB_TOM')
-        """
+        """Получить данные по валютной паре."""
         return await self.currencies.get_currency(ticker)
 
     async def find(
         self, query: str, instrument_type: InstrumentType | str | None = None
     ) -> list[Search]:
-        """
-        Поиск инструментов по строке.
-
-        :param query: строка поиска (тикер, имя, ISIN)
-        :param instrument_type: 'share', 'bond' или None (всё)
-        :return: список найденных инструментов
-        """
+        """Поиск инструментов по строке."""
         return await self.search.find(query, instrument_type)
 
     async def find_bonds(self, query: str) -> list[Search]:
-        """
-        Поиск облигаций по строке.
-        """
+        """Поиск облигаций по строке."""
         return await self.search.find(query, InstrumentType.BOND)
 
     async def find_shares(self, query: str) -> list[Search]:
-        """
-        Поиск акций по строке.
-        """
+        """Поиск акций по строке."""
         return await self.search.find(query, InstrumentType.SHARE)
 
     async def find_funds(self, query: str) -> list[Search]:
@@ -124,12 +100,7 @@ class MoexClient:
         return await self.search.find(query, InstrumentType.CURRENCY)
 
     async def dividends(self, ticker: str) -> list[Dividend]:
-        """
-        Получить данные по дивидендам.
-
-        :param ticker: тикер (например, 'SBER')
-        :return: список дивидендов
-        """
+        """Получить данные по дивидендам."""
         return await self.shares.get_dividends(ticker)
 
     async def coupons(self, ticker: str) -> list[Coupon]:
@@ -139,9 +110,3 @@ class MoexClient:
     async def amortizations(self, ticker: str) -> list[Amortization]:
         """Асинхронно получить график амортизации по облигации."""
         return await self.bonds.get_amortizations(ticker)
-
-    async def __aenter__(self) -> "MoexClient":
-        return self
-
-    async def __aexit__(self, exc_type, exc, tb):
-        await self.close()
