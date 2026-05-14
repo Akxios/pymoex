@@ -1,20 +1,16 @@
 class MoexError(Exception):
-    pass
     """Базовое исключение для всех ошибок SDK pymoex."""
 
 
 class InstrumentNotFoundError(MoexError):
-    pass
     """Акция или облигация не найдена на Московской бирже."""
 
 
 class MoexAPIError(MoexError):
-    pass
     """Базовое исключение для ошибок ISS API."""
 
 
 class MoexNetworkError(MoexError):
-    pass
     """Базовое исключение для сетевых и HTTP ошибок."""
 
 
