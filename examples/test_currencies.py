@@ -5,16 +5,13 @@ from pymoex import MoexClient
 
 async def main():
     async with MoexClient() as client:
-        # Обычный юань
-        cny = await client.currency("CNY")
+        cny = await client.currency("CNYRUB_TOM")
         print(f"Юань: {cny.last_price}")
 
-        # Внебиржевой (актуальный) доллар
-        usd = await client.currency("USDCB")
-        print(f"Доллар (внебиржа): {usd.last_price}")
+        usd = await client.currency("USDRUBTOMOTC")
+        print(f"Доллар: {usd.last_price}")
 
-        # Золото
-        gld = await client.currency("GLD")
+        gld = await client.currency("GLDRUB_TOM")
         print(f"Золото: {gld.last_price}")
 
 
