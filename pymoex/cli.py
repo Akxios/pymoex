@@ -15,14 +15,18 @@ from pymoex.api import (
 from pymoex.models.bond import Bond
 from pymoex.models.bondization import Coupon
 from pymoex.models.dividend import Dividend
+from pymoex.models.enums import InstrumentType
 from pymoex.models.search import Search
 from pymoex.models.share import Share
 
 app: Typer = typer.Typer(help="Утилита для работы с данными Московской биржи")
 
-share_app: Typer = typer.Typer(help="Работа с акциями (поиск, информация, дивиденды)")
-bond_app: Typer = typer.Typer(help="Работа с облигациями (поиск, купоны, амортизация)")
 
+# search_app: Typer = typer.Typer(help="Работа с поиском")
+share_app: Typer = typer.Typer(help="Работа с акциями")
+bond_app: Typer = typer.Typer(help="Работа с облигациями")
+
+# app.add_typer(typer_instance=search_app, name="search")
 app.add_typer(typer_instance=share_app, name="share")
 app.add_typer(typer_instance=bond_app, name="bond")
 
@@ -32,13 +36,20 @@ app.add_typer(typer_instance=bond_app, name="bond")
 def search(
     query: Annotated[
         str,
-        typer.Argument(..., help="Общий поиск"),
+        typer.Argument(..., help="Строка для поиска"),
     ],
+    instr_type: Annotated[
+        InstrumentType | None,
+        typer.Option("--type", "-t", help="Тип инструмента", case_sensitive=False),
+    ] = None,
 ) -> None:
     """
     Синхронный поиск по строке.
     """
-    results: list[Search] = find(query)
+
+    type_val: str | None = instr_type.value if instr_type is not None else None
+
+    results: list[Search] = find(query, type_val)
 
     if not results:
         typer.secho(message="Ничего не найдено.", fg=typer.colors.YELLOW)
