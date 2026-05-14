@@ -6,12 +6,25 @@ from pymoex.core.constants import (
     CURRENCY_GROUPS,
     FUND_GROUPS,
     SHARE_GROUPS,
+    CacheTTL,
 )
+from pymoex.core.interfaces import ICache
+from pymoex.core.session import MoexSession
 from pymoex.models.enums import InstrumentType
 from pymoex.models.search import Search
+from pymoex.utils.response import get_table
 from pymoex.utils.table import parse_table
 
 logger = logging.getLogger(__name__)
+
+type Row = dict[str, object]
+
+GROUPS_BY_INSTRUMENT_TYPE = {
+    InstrumentType.SHARE: SHARE_GROUPS,
+    InstrumentType.FUND: FUND_GROUPS,
+    InstrumentType.BOND: BOND_GROUPS,
+    InstrumentType.CURRENCY: CURRENCY_GROUPS,
+}
 
 
 class SearchService:
@@ -19,9 +32,9 @@ class SearchService:
     Сервис для поиска инструментов
     """
 
-    def __init__(self, session, cache):
-        self.session = session
-        self.cache = cache
+    def __init__(self, session: MoexSession, cache: ICache) -> None:
+        self.session: MoexSession = session
+        self.cache: ICache = cache
 
     async def find(
         self,
@@ -29,69 +42,76 @@ class SearchService:
         instrument_type: InstrumentType | str | None = None,
     ) -> list[Search]:
         query_norm = query.strip().lower()
+
+        if not query_norm:
+            return []
+
         itype = self._normalize_instrument_type(instrument_type)
 
-        logger.debug(f"Search query='{query_norm}' type={itype}")
+        logger.debug("Search query=%r type=%s", query_norm, itype)
 
         cache_key = f"search:{query_norm}:{itype.value if itype else 'all'}"
 
-        async def _fetch():
+        async def _fetch() -> list[Search]:
             data = await self.session.get(
                 endpoints.search(),
                 params={"q": query_norm, "limit": 1000},
             )
 
-            sec_data = data.get("securities", {})
+            raw = parse_table(get_table(data, "securities"))
 
-            raw = parse_table(sec_data)
+            logger.debug("MOEX returned %s raw item for %r", len(raw), query_norm)
 
-            logger.debug(f"MOEX returned {len(raw)} raw items for '{query_norm}'")
-
-            # Фильтрация по типу
             filtered = self._filter_by_type(raw, itype)
 
             if len(filtered) != len(raw):
-                logger.debug(f"Filtered by type {itype}: {len(raw)} -> {len(filtered)}")
+                logger.debug(
+                    "Filtered by type %s: %s -> %s",
+                    itype,
+                    len(raw),
+                    len(filtered),
+                )
 
             ranked = self._rank_results(filtered, query_norm)
 
             if not ranked and filtered:
                 logger.debug(
-                    f"Ranking removed all results for '{query_norm}' (no strict matches)"
+                    "Ranking removed all results for %r; no strict matches",
+                    query_norm,
                 )
 
-            uniq = {}
-            for r in ranked:
-                sid = r.get("secid")
-                if sid and sid.upper() not in uniq:
-                    uniq[sid.upper()] = r
+            unique = self._deduplicate_by_secid(ranked)
 
-            results = [Search(**r) for r in uniq.values()]
+            results = [Search.model_validate(row) for row in unique]
 
-            logger.debug(f"Found {len(results)} unique results for '{query_norm}'")
+            logger.debug(
+                "Found %s unique results for %r",
+                len(results),
+                query_norm,
+            )
 
             return results
 
-        return await self.cache.get_or_set(cache_key, _fetch)
+        return await self.cache.get_or_set(
+            cache_key,
+            _fetch,
+            ttl=CacheTTL.SEARCH_TTL_SECONDS,
+        )
 
+    @staticmethod
     def _filter_by_type(
-        self, raw: list[dict], itype: InstrumentType | None
-    ) -> list[dict]:
+        raw: list[Row],
+        itype: InstrumentType | None,
+    ) -> list[Row]:
         if itype is None:
             return raw
 
-        if itype == InstrumentType.SHARE:
-            allowed = SHARE_GROUPS
-            return [r for r in raw if r.get("group") in allowed]
+        allowed_groups = GROUPS_BY_INSTRUMENT_TYPE.get(itype)
 
-        if itype == InstrumentType.FUND:
-            return [r for r in raw if r.get("group") in FUND_GROUPS]
+        if allowed_groups is None:
+            return []
 
-        if itype == InstrumentType.BOND:
-            return [r for r in raw if r.get("group") in BOND_GROUPS]
-
-        if itype == InstrumentType.CURRENCY:
-            return [r for r in raw if r.get("group") in CURRENCY_GROUPS]
+        return [row for row in raw if row.get("group") in allowed_groups]
 
     @staticmethod
     def _normalize_instrument_type(
@@ -104,42 +124,62 @@ class SearchService:
             return value
 
         try:
-            return InstrumentType(value.lower())
-        except ValueError:
-            raise ValueError(f"Unknown instrument type: {value!r}")
+            return InstrumentType(value.strip().lower())
+        except ValueError as e:
+            raise ValueError(f"Unknown instrument type: {value!r}") from e
 
-    def _rank_results(self, raw: list[dict], query: str) -> list[dict]:
-        def norm(s: str | None) -> str:
-            return s.lower().replace(" ", "") if isinstance(s, str) else ""
+    @staticmethod
+    def _rank_results(raw: list[Row], query: str) -> list[Row]:
+        def norm(value: object) -> str:
+            return value.lower().replace(" ", "") if isinstance(value, str) else ""
 
         q = norm(query)
 
-        def score(r: dict) -> int:
-            secid = norm(r.get("secid"))
-            short = norm(r.get("shortname"))
-            isin = norm(r.get("isin"))
-            full_name = norm(r.get("name"))
+        def score(row: Row) -> int:
+            secid = norm(row.get("secid"))
+            short_name = norm(row.get("shortname"))
+            isin = norm(row.get("isin"))
+            full_name = norm(row.get("name"))
 
             if secid == q or isin == q:
                 return 100
-            if short == q:
+            if short_name == q:
                 return 90
             if q in secid:
                 return 80
-            if q in short:
+            if q in short_name:
                 return 70
             if q in full_name:
                 return 65
+
             return 0
 
-        # Считаем очки
-        scored = [(score(r), r) for r in raw]
-
-        # Оставляем только те, где score > 0
-        scored = [x for x in scored if x[0] > 0]
+        scored = [(score(row), row) for row in raw]
+        scored = [(points, row) for points, row in scored if points > 0]
 
         scored.sort(
-            key=lambda x: (x[0], -len(x[1].get("secid", "") or "")), reverse=True
+            key=lambda item: (
+                item[0],
+                -len(norm(item[1].get("secid"))),
+            ),
+            reverse=True,
         )
 
-        return [r for s, r in scored][:20]
+        return [row for _, row in scored][:20]
+
+    @staticmethod
+    def _deduplicate_by_secid(raw: list[Row]) -> list[Row]:
+        unique: dict[str, Row] = {}
+
+        for row in raw:
+            secid = row.get("secid")
+
+            if not isinstance(secid, str):
+                continue
+
+            key = secid.upper()
+
+            if key not in unique:
+                unique[key] = row
+
+        return list(unique.values())
