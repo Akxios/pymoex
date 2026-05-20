@@ -4,11 +4,10 @@ from pydantic import BaseModel
 
 from pymoex.core import endpoints
 from pymoex.core.constants import CacheTTL
-from pymoex.core.interfaces import ICache
-from pymoex.core.session import MoexSession
 from pymoex.exceptions import InstrumentNotFoundError
 from pymoex.models.dividend import Dividend
 from pymoex.models.share import Share
+from pymoex.services.base import BaseService
 from pymoex.utils.boards import select_best_board
 from pymoex.utils.response import (
     find_row_by_board,
@@ -20,16 +19,12 @@ from pymoex.utils.table import parse_table
 logger = logging.getLogger(__name__)
 
 
-class SharesService:
+class SharesService(BaseService):
     """
     Сервис для получения данных по акциям.
     """
 
-    def __init__(self, session: MoexSession, cache: ICache) -> None:
-        self.session: MoexSession = session
-        self.cache: ICache = cache
-
-    async def get_share(self, ticker: str) -> Share:
+    async def get(self, ticker: str) -> Share:
         ticker = normalize_ticker(ticker)
         cache_key = f"share:{ticker}"
 
@@ -72,7 +67,7 @@ class SharesService:
 
         return Share.model_validate(combined_data)
 
-    async def get_dividends(self, ticker: str) -> list[Dividend]:
+    async def dividends(self, ticker: str) -> list[Dividend]:
         """
         Получить историю дивидендов и будущие утвержденные выплаты по акции.
         """

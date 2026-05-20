@@ -4,11 +4,10 @@ from pydantic import BaseModel
 
 from pymoex.core import endpoints
 from pymoex.core.constants import CacheTTL
-from pymoex.core.interfaces import ICache
-from pymoex.core.session import MoexSession
 from pymoex.exceptions import InstrumentNotFoundError
 from pymoex.models.bond import Bond
 from pymoex.models.bondization import Amortization, Coupon
+from pymoex.services.base import BaseService
 from pymoex.utils.boards import select_best_board
 from pymoex.utils.response import (
     find_row_by_board,
@@ -20,16 +19,12 @@ from pymoex.utils.table import parse_table
 logger = logging.getLogger(__name__)
 
 
-class BondsService:
+class BondsService(BaseService):
     """
     Сервис для получения данных по облигациям.
     """
 
-    def __init__(self, session: MoexSession, cache: ICache) -> None:
-        self.session: MoexSession = session
-        self.cache: ICache = cache
-
-    async def get_bond(self, ticker: str) -> Bond:
+    async def get(self, ticker: str) -> Bond:
         ticker = normalize_ticker(ticker)
         cache_key = f"bond:{ticker}"
 
@@ -41,7 +36,7 @@ class BondsService:
             cache_key, _fetch, ttl=CacheTTL.BOND_TTL_SECONDS
         )
 
-    async def get_coupons(self, ticker: str) -> list[Coupon]:
+    async def coupons(self, ticker: str) -> list[Coupon]:
         """
         Получить историю и график будущих купонов по облигации.
         """
@@ -52,7 +47,7 @@ class BondsService:
             model=Coupon,
         )
 
-    async def get_amortizations(self, ticker: str) -> list[Amortization]:
+    async def amortizations(self, ticker: str) -> list[Amortization]:
         """
         Получить график амортизации (выплаты номинала) по облигации.
         """
