@@ -24,10 +24,11 @@ class MoexClient:
 
     def __init__(
         self,
+        session: MoexSession | None = None,
         cache: ICache | None = None,
         use_cache: bool = True,
     ) -> None:
-        self.session: MoexSession = MoexSession()
+        self.session: MoexSession = session or MoexSession()
 
         if not use_cache:
             self._cache: ICache = NullCache()
