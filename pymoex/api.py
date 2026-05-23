@@ -1,11 +1,9 @@
 import asyncio
-import atexit
-import threading
-from collections.abc import Awaitable, Callable
-from concurrent.futures import TimeoutError as FutureTimeoutError
-from contextlib import suppress
+from collections.abc import Awaitable, Callable, Coroutine
+from typing import Self, TypedDict, Unpack
 
 from pymoex.client import MoexClient
+from pymoex.core.interfaces import ICache
 from pymoex.models.bond import Bond
 from pymoex.models.bondization import Amortization, Coupon
 from pymoex.models.currency import Currency
@@ -15,8 +13,9 @@ from pymoex.models.search import Search
 from pymoex.models.share import Share
 
 
-async def _await_result[T](awaitable: Awaitable[T]) -> T:
-    return await awaitable
+class MoexClientKwargs(TypedDict, total=False):
+    cache: ICache | None
+    use_cache: bool
 
 
 def _ensure_no_running_loop() -> None:
@@ -27,232 +26,167 @@ def _ensure_no_running_loop() -> None:
 
     message = (
         "Cannot use sync API when an event loop is running. "
-        "Use MoexClient (async API) instead."
+        "Use MoexClient async API instead."
     )
+
     raise RuntimeError(message)
 
 
-class _SyncManager:
+def _run_once[T](func: Callable[[MoexClient], Awaitable[T]]) -> T:
     """
-    Менеджер фонового цикла событий для синхронного API.
-    Обеспечивает жизнь единого MoexClient между вызовами.
+    Выполнить один синхронный вызов через временный MoexClient.
+    """
+    _ensure_no_running_loop()
+
+    async def _main() -> T:
+        async with MoexClient() as client:
+            return await func(client)
+
+    return asyncio.run(_main())
+
+
+class SyncMoexClient:
+    """
+    Синхронная обертка над асинхронным MoexClient.
     """
 
-    def __init__(self) -> None:
-        self._loop: asyncio.AbstractEventLoop = asyncio.new_event_loop()
-        self._thread: threading.Thread = threading.Thread(
-            target=self._run_loop,
-            name="PymoexSyncThread",
-            daemon=True,
-        )
-        self._closed: bool = False
+    _runner: asyncio.Runner
+    _client: MoexClient
+    _closed: bool
 
-        self._thread.start()
+    def __init__(self, **client_kwargs: Unpack[MoexClientKwargs]) -> None:
+        _ensure_no_running_loop()
 
-        future = asyncio.run_coroutine_threadsafe(self._init_client(), self._loop)
-        self.client: MoexClient = future.result()
+        self._runner = asyncio.Runner()
+        self._client = MoexClient(**client_kwargs)
+        self._closed = False
 
-        _ = atexit.register(self.shutdown)
+    def _run[T](self, coro: Coroutine[object, object, T]) -> T:
+        if self._closed:
+            raise RuntimeError("SyncMoexClient is already closed.")
 
-    @property
-    def is_closed(self) -> bool:
-        """Свойство для безопасной проверки статуса менеджера."""
-        return self._closed
+        return self._runner.run(coro)
 
-    def _run_loop(self) -> None:
-        asyncio.set_event_loop(self._loop)
-        self._loop.run_forever()
-
-    async def _init_client(self) -> MoexClient:
-        return MoexClient()
-
-    async def _close_client(self) -> None:
-        await self.client.close()
-
-    def shutdown(self) -> None:
-        """Остановка цикла и закрытие HTTP-сессии."""
+    def close(self) -> None:
+        """Явно закрыть ресурсы клиента."""
 
         if self._closed:
             return
 
+        self._runner.run(self._client.close())
+        self._runner.close()
         self._closed = True
 
-        if self._loop.is_running():
-            future = asyncio.run_coroutine_threadsafe(self._close_client(), self._loop)
+    def __enter__(self) -> Self:
+        return self
 
-            with suppress(FutureTimeoutError, RuntimeError):
-                future.result(timeout=2)
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: object | None,
+    ) -> None:
+        self.close()
 
-            _ = self._loop.call_soon_threadsafe(self._loop.stop)
+    def share(self, ticker: str) -> Share:
+        return self._run(self._client.share(ticker))
 
-        if self._thread.is_alive():
-            self._thread.join(timeout=2)
+    def bond(self, ticker: str) -> Bond:
+        return self._run(self._client.bond(ticker))
 
-        if not self._loop.is_closed() and not self._thread.is_alive():
-            self._loop.close()
+    def fund(self, ticker: str) -> Share:
+        return self._run(self._client.fund(ticker))
 
-    def execute[T](self, awaitable: Awaitable[T]) -> T:
-        """Запуск корутины в фоновом потоке с ожиданием результата."""
+    def currency(self, ticker: str) -> Currency:
+        return self._run(self._client.currency(ticker))
 
-        if self._closed:
-            raise RuntimeError("Sync manager is already closed.")
+    def find(
+        self,
+        query: str,
+        instrument_type: InstrumentType | str | None = None,
+    ) -> list[Search]:
+        return self._run(self._client.find(query, instrument_type))
 
-        future = asyncio.run_coroutine_threadsafe(
-            _await_result(awaitable),
-            self._loop,
-        )
+    def find_shares(self, query: str) -> list[Search]:
+        return self._run(self._client.find_shares(query))
 
-        return future.result()
+    def find_bonds(self, query: str) -> list[Search]:
+        return self._run(self._client.find_bonds(query))
 
+    def find_funds(self, query: str) -> list[Search]:
+        return self._run(self._client.find_funds(query))
 
-_manager: _SyncManager | None = None
+    def find_currencies(self, query: str) -> list[Search]:
+        return self._run(self._client.find_currencies(query))
 
+    def dividends(self, ticker: str) -> list[Dividend]:
+        return self._run(self._client.dividends(ticker))
 
-def _get_manager() -> _SyncManager:
-    global _manager
+    def coupons(self, ticker: str) -> list[Coupon]:
+        return self._run(self._client.coupons(ticker))
 
-    if _manager is None or _manager.is_closed:
-        _manager = _SyncManager()
-
-    return _manager
-
-
-def _run_client_call[T](func: Callable[[MoexClient], Awaitable[T]]) -> T:
-    """
-    Выполняет асинхронный вызов, переиспользуя глобальный клиент
-    в фоновом потоке, чтобы сохранить кэш и пул соединений.
-    """
-    _ensure_no_running_loop()
-
-    manager = _get_manager()
-    return manager.execute(func(manager.client))
+    def amortizations(self, ticker: str) -> list[Amortization]:
+        return self._run(self._client.amortizations(ticker))
 
 
 def get_share(ticker: str) -> Share:
-    """
-    Синхронно получить данные по акции.
-
-    :param ticker: тикер акции (например, 'SBER')
-    :return: объект Share
-    """
-
-    return _run_client_call(lambda c: c.share(ticker))
+    """Синхронно получить данные по акции."""
+    return _run_once(lambda client: client.share(ticker))
 
 
 def get_bond(ticker: str) -> Bond:
-    """
-    Синхронно получить данные по облигации.
-
-    :param ticker: ISIN или торговый код
-    :return: объект Bond
-    """
-
-    return _run_client_call(lambda c: c.bond(ticker))
-
-
-def find(
-    query: str, instrument_type: InstrumentType | str | None = None
-) -> list[Search]:
-    """
-    Синхронный поиск по строке.
-
-    :param query: тикер, название, ISIN, эмитент
-    :return: список Search
-    """
-
-    return _run_client_call(lambda c: c.find(query, instrument_type))
-
-
-def find_shares(query: str) -> list[Search]:
-    """
-    Синхронный поиск акций по строке.
-
-    :param query: тикер, название, ISIN, эмитент
-    :return: список Search
-    """
-
-    return _run_client_call(lambda c: c.find_shares(query))
-
-
-def find_bonds(query: str) -> list[Search]:
-    """
-    Синхронный поиск облигаций по строке.
-
-    :param query: тикер, название, ISIN, эмитент
-    :return: список Search
-    """
-
-    return _run_client_call(lambda c: c.find_bonds(query))
-
-
-def find_funds(query: str) -> list[Search]:
-    """
-    Синхронный поиск фондов по строке.
-
-    :param query: тикер, название, ISIN, эмитент
-    :return: список Search
-    """
-    return _run_client_call(lambda c: c.find_funds(query))
-
-
-def find_currencies(query: str) -> list[Search]:
-    """
-    Синхронный поиск валют по строке.
-
-    :param query: тикер, название, ISIN, эмитент
-    :return: список Search
-    """
-    return _run_client_call(lambda c: c.find_currencies(query))
-
-
-def get_dividends(ticker: str) -> list[Dividend]:
-    """
-    Синхронно получить историю дивидендов и будущие утвержденные выплаты по акции.
-
-    :param ticker: тикер акции (например, 'SBER')
-    :return: список объектов Dividend
-    """
-
-    return _run_client_call(lambda c: c.dividends(ticker))
-
-
-def get_coupons(ticker: str) -> list[Coupon]:
-    """
-    Синхронно получить историю и график купонов по облигации.
-
-    :param ticker: тикер облигации (например, 'SBERP')
-    :return: список объектов Coupon
-    """
-
-    return _run_client_call(lambda c: c.coupons(ticker))
-
-
-def get_amortizations(ticker: str) -> list[Amortization]:
-    """
-    Синхронно получить график амортизации по облигации.
-
-    :param ticker: тикер облигации (например, 'SBERP')
-    :return: список объектов Amortization
-    """
-
-    return _run_client_call(lambda c: c.amortizations(ticker))
+    """Синхронно получить данные по облигации."""
+    return _run_once(lambda client: client.bond(ticker))
 
 
 def get_fund(ticker: str) -> Share:
-    """
-    Синхронно получить данные по фонду (ПИФ/ETF).
-
-    :param ticker: тикер фонда (например, 'SBER')
-    :return: объект Share
-    """
-    return _run_client_call(lambda c: c.fund(ticker))
+    """Синхронно получить данные по фонду."""
+    return _run_once(lambda client: client.fund(ticker))
 
 
 def get_currency(ticker: str) -> Currency:
-    """
-    Синхронно получить данные по валюте.
+    """Синхронно получить данные по валюте."""
+    return _run_once(lambda client: client.currency(ticker))
 
-    :param ticker: тикер валютной пары (например, 'CNYRUB_TOM')
-    :return: объект Currency
-    """
-    return _run_client_call(lambda c: c.currency(ticker))
+
+def find(
+    query: str,
+    instrument_type: InstrumentType | str | None = None,
+) -> list[Search]:
+    """Синхронный поиск по строке."""
+    return _run_once(lambda client: client.find(query, instrument_type))
+
+
+def find_shares(query: str) -> list[Search]:
+    """Синхронный поиск акций по строке."""
+    return _run_once(lambda client: client.find_shares(query))
+
+
+def find_bonds(query: str) -> list[Search]:
+    """Синхронный поиск облигаций по строке."""
+    return _run_once(lambda client: client.find_bonds(query))
+
+
+def find_funds(query: str) -> list[Search]:
+    """Синхронный поиск фондов по строке."""
+    return _run_once(lambda client: client.find_funds(query))
+
+
+def find_currencies(query: str) -> list[Search]:
+    """Синхронный поиск валют по строке."""
+    return _run_once(lambda client: client.find_currencies(query))
+
+
+def get_dividends(ticker: str) -> list[Dividend]:
+    """Синхронно получить историю дивидендов и будущие выплаты по акции."""
+    return _run_once(lambda client: client.dividends(ticker))
+
+
+def get_coupons(ticker: str) -> list[Coupon]:
+    """Синхронно получить историю и график купонов по облигации."""
+    return _run_once(lambda client: client.coupons(ticker))
+
+
+def get_amortizations(ticker: str) -> list[Amortization]:
+    """Синхронно получить график амортизации по облигации."""
+    return _run_once(lambda client: client.amortizations(ticker))
