@@ -62,16 +62,23 @@ class MoexSession:
     def __init__(self, settings: MoexSettings | None = None) -> None:
         self.settings: MoexSettings = settings or MoexSettings()
 
-        self.client: httpx.AsyncClient = httpx.AsyncClient(
-            base_url=self.settings.base_url,
-            timeout=self.settings.timeout,
-            headers={
-                "User-Agent": self.settings.user_agent,
-            },
-        )
+        self._client: httpx.AsyncClient | None = None
 
         self._rate_limit_lock: asyncio.Lock = asyncio.Lock()
         self._last_request_time: float = 0.0
+
+    @property
+    def client(self) -> httpx.AsyncClient:
+        if self._client is None:
+            self._client = httpx.AsyncClient(
+                base_url=self.settings.base_url,
+                timeout=self.settings.timeout,
+                headers={
+                    "User-Agent": self.settings.user_agent,
+                },
+            )
+
+        return self._client
 
     async def __aenter__(self) -> Self:
         return self
@@ -204,4 +211,5 @@ class MoexSession:
 
     async def close(self) -> None:
         """Корректно закрываем HTTP-сессию."""
-        await self.client.aclose()
+        if self._client:
+            await self.client.aclose()
