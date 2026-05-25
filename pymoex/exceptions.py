@@ -10,6 +10,10 @@ class MoexAPIError(MoexError):
     """Базовое исключение для ошибок ISS API."""
 
 
+class MoexResponseParseError(MoexAPIError):
+    """Ошибка декодирования JSON или неожиданный формат ответа."""
+
+
 class MoexNetworkError(MoexError):
     """Базовое исключение для сетевых и HTTP ошибок."""
 
@@ -40,7 +44,3 @@ class MoexServerError(MoexHTTPError):
 
 class MoexTimeoutError(MoexNetworkError):
     """Таймаут сетевого запроса к MOEX API."""
-
-
-class MoexResponseParseError(MoexAPIError):
-    """Ошибка декодирования JSON или неожиданный формат ответа."""
