@@ -16,7 +16,6 @@ class NullCache(ICache):
     """
     Заглушка (Dummy Cache).
     Используется, если кэширование нужно полностью отключить.
-    Ничего не сохраняет, factory() вызывает напрямую.
     """
 
     @override
@@ -44,7 +43,7 @@ class NullCache(ICache):
 
 class MemoryCache(ICache):
     """
-    In-memory кэш с защитой от Cache Stampede (Request Coalescing).
+    In-memory кэш с защитой от Cache Stampede.
     """
 
     def __init__(self, ttl: int = 60, maxsize: int = 1000) -> None:
@@ -135,8 +134,6 @@ class MemoryCache(ICache):
         async with self._lock:
             self._data.clear()
             self._order.clear()
-
-    # --- Приватные методы ---
 
     def _get_locked(self, key: str) -> object | None:
         """Безопасное получение значения без блокировки"""
