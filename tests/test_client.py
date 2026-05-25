@@ -68,11 +68,6 @@ async def test_client_context_manager_calls_close(
 async def test_client_close_clears_cache_and_closes_session(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """
-    close() должен:
-    - очистить кэш;
-    - закрыть HTTP-сессию.
-    """
     client = MoexClient()
 
     cache_clear_mock = AsyncMock()
@@ -116,21 +111,15 @@ async def test_client_proxies_search_calls(
 async def test_client_proxies_instrument_calls(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """
-    Методы share/bond/fund/currency должны вызывать соответствующие сервисы.
-
-    fund() сейчас использует SharesService.get_share(),
-    потому что фонды идут через похожий endpoint/модель.
-    """
     client = MoexClient(use_cache=False)
 
     get_share_mock = AsyncMock(return_value="share-result")
     get_bond_mock = AsyncMock(return_value="bond-result")
     get_currency_mock = AsyncMock(return_value="currency-result")
 
-    monkeypatch.setattr(client.shares, "get_share", get_share_mock)
-    monkeypatch.setattr(client.bonds, "get_bond", get_bond_mock)
-    monkeypatch.setattr(client.currencies, "get_currency", get_currency_mock)
+    monkeypatch.setattr(client.shares, "get", get_share_mock)
+    monkeypatch.setattr(client.bonds, "get", get_bond_mock)
+    monkeypatch.setattr(client.currencies, "get", get_currency_mock)
 
     try:
         share_result = await client.share("SBER")
@@ -164,9 +153,9 @@ async def test_client_proxies_event_calls(
     get_coupons_mock = AsyncMock(return_value=[])
     get_amortizations_mock = AsyncMock(return_value=[])
 
-    monkeypatch.setattr(client.shares, "get_dividends", get_dividends_mock)
-    monkeypatch.setattr(client.bonds, "get_coupons", get_coupons_mock)
-    monkeypatch.setattr(client.bonds, "get_amortizations", get_amortizations_mock)
+    monkeypatch.setattr(client.shares, "dividends", get_dividends_mock)
+    monkeypatch.setattr(client.bonds, "coupons", get_coupons_mock)
+    monkeypatch.setattr(client.bonds, "amortizations", get_amortizations_mock)
 
     try:
         await client.dividends("SBER")
