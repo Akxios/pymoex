@@ -31,8 +31,8 @@
 Параметры, определяющие вид и группу финансового инструмента.
 | Поле (API) | Атрибут в SDK | Тип в Python | Описание |
 | --- | --- | --- | --- |
-| type | type | str | Тип бумаги |
-| group | group | str | Группа инструмент |
+| `type` | `type` | `str` | Тип бумаги |
+| `group` | `group` | `str` | Группа инструмент |
 
 ---
 
@@ -41,10 +41,10 @@
 
 | Поле (API) | Атрибут в SDK | Тип в Python | Описание |
 | --- | --- | --- | --- |
-| is_traded | is_traded | bool | Торгуется ли инструмент в данный момент на бирже |
-| primary_boardid | primary_boardid | str | Главный режим торгов |
-| marketprice_boardid | marketprice_boardid | str | Режим торгов, используемый для расчета рыночной цены |
-|  |  |  |  |
+| `is_traded` | `is_traded` | `bool` | Торгуется ли инструмент в данный момент на бирже |
+| `primary_boardid` | `primary_boardid` | `str` | Главный режим торгов |
+| `marketprice_boardid` | `marketprice_boardid` | `str` | Режим торгов, используемый для расчета рыночной цены |
+
 
 ---
 
@@ -52,10 +52,10 @@
 Данные о юридическом лице, выпустившем ценную бумагу.
 | Поле (API) | Атрибут в SDK | Тип в Python | Описание |
 | --- | --- | --- | --- |
-| emitent_id | emitent_id | int | Внутренний идентификатор эмитента на Московской бирже |
-| emitent_title | emitent_title | str | Юридическое название компании-эмитента |
-| emitent_inn | emitent_inn | str | ИНН компании-эмитента |
-| emitent_okpo | emitent_okpo | str | ОКПО компании-эмитента |
+| `emitent_id` | `emitent_id` | `int` | Внутренний идентификатор эмитента на Московской бирже |
+| `emitent_title` | `emitent_title` | `str` | Юридическое название компании-эмитента |
+| `emitent_inn` | `emitent_inn` | `str` | ИНН компании-эмитента |
+| `emitent_okpo` | `emitent_okpo` | `str` | ОКПО компании-эмитента |
 
 ## Пример использования в коде
 ```python
