@@ -1,16 +1,14 @@
 import logging
+from typing import ClassVar, override
 
 from pydantic import BaseModel
 
 from pymoex.core import endpoints
 from pymoex.core.constants import CacheTTL
-from pymoex.exceptions import InstrumentNotFoundError
 from pymoex.models.bond import Bond
 from pymoex.models.bondization import Amortization, Coupon
-from pymoex.services.base import BaseService
-from pymoex.utils.boards import select_best_board
+from pymoex.services.base import InstrumentService
 from pymoex.utils.response import (
-    find_row_by_board,
     get_table,
     normalize_ticker,
 )
@@ -19,22 +17,23 @@ from pymoex.utils.table import parse_table
 logger = logging.getLogger(__name__)
 
 
-class BondsService(BaseService):
+class BondsService(InstrumentService[Bond]):
     """
     Сервис для получения данных по облигациям.
     """
 
-    async def get(self, ticker: str) -> Bond:
-        ticker = normalize_ticker(ticker)
-        cache_key = f"bond:{ticker}"
+    instrument_name: ClassVar[str] = "Bond"
+    cache_prefix: ClassVar[str] = "bond"
+    ttl: ClassVar[int] = CacheTTL.BOND_EVENTS_TTL_SECONDS
+    priority_boards_attr: ClassVar[str] = "preferred_share_boards"
 
-        async def _fetch() -> Bond:
-            data = await self.session.get(endpoints.bond(ticker))
-            return self._build_bond(ticker, data)
+    @override
+    def get_model(self) -> type[Bond]:
+        return Bond
 
-        return await self.cache.get_or_set(
-            cache_key, _fetch, ttl=CacheTTL.BOND_TTL_SECONDS
-        )
+    @override
+    def get_endpoint(self, ticker: str) -> str:
+        return endpoints.bond(ticker)
 
     async def coupons(self, ticker: str) -> list[Coupon]:
         """
@@ -57,37 +56,6 @@ class BondsService(BaseService):
             table_name="amortizations",
             model=Amortization,
         )
-
-    def _build_bond(self, ticker: str, data: dict[str, object]) -> Bond:
-        securities = get_table(data, "securities")
-
-        if not securities.get("data"):
-            logger.warning("Bond %s not found in MOEX response", ticker)
-            raise InstrumentNotFoundError(f"Bond {ticker} not found")
-
-        sec_rows = parse_table(securities)
-        md_rows = parse_table(get_table(data, "marketdata"))
-        yield_rows = parse_table(get_table(data, "marketdata_yields"))
-
-        if not sec_rows:
-            logger.warning("Bond %s has empty securities table", ticker)
-            raise InstrumentNotFoundError(f"Bond {ticker} not found")
-
-        target_board = select_best_board(
-            sec_rows=sec_rows,
-            md_rows=md_rows,
-            priority_boards=self.session.settings.preferred_bond_boards,
-        )
-
-        logger.debug("Selected board %r for bond %s", target_board, ticker)
-
-        security = find_row_by_board(sec_rows, target_board) or sec_rows[0]
-        market_data = find_row_by_board(md_rows, target_board) or {}
-        yield_data = find_row_by_board(yield_rows, target_board) or {}
-
-        combined_data = {**security, **yield_data, **market_data}
-
-        return Bond.model_validate(combined_data)
 
     async def _get_bond_events(self, ticker: str) -> dict[str, object]:
         cache_key = f"bond_events:{ticker}"
