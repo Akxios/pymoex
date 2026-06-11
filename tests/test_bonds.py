@@ -3,12 +3,13 @@ from decimal import Decimal
 import pytest
 from httpx import Response
 
+from pymoex.client import MoexClient
 from pymoex.exceptions import InstrumentNotFoundError
-from tests.conftest import EMPTY_SECURITIES_RESPONSE, MOEX_BOND_JSON
+from tests.conftest import EMPTY_SECURITIES_RESPONSE, MOEX_BOND_JSON, MockRouter
 
 
 @pytest.mark.asyncio
-async def test_get_bond_success(client, mock_moex) -> None:
+async def test_get_bond_success(client: MoexClient, mock_moex: MockRouter) -> None:
     """
     Проверка: успешное получение облигации.
 
@@ -18,7 +19,7 @@ async def test_get_bond_success(client, mock_moex) -> None:
     - собрать данные из securities, marketdata и marketdata_yields;
     - вернуть модель Bond.
     """
-    mock_moex.get("/engines/stock/markets/bonds/securities/SU26238RMFS4.json").mock(
+    _ = mock_moex.get("/engines/stock/markets/bonds/securities/SU26238RMFS4.json").mock(
         return_value=Response(200, json=MOEX_BOND_JSON)
     )
 
@@ -44,21 +45,22 @@ async def test_get_bond_success(client, mock_moex) -> None:
 
 
 @pytest.mark.asyncio
-async def test_get_bond_not_found(client, mock_moex) -> None:
+async def test_get_bond_not_found(client: MoexClient, mock_moex: MockRouter) -> None:
     """
-    Проверка: если таблица securities пустая, сервис выбрасывает InstrumentNotFoundError.
+    Проверка: если таблица securities пустая,
+    сервис выбрасывает InstrumentNotFoundError.
     """
-    mock_moex.get("/engines/stock/markets/bonds/securities/FAKE_BOND.json").mock(
+    _ = mock_moex.get("/engines/stock/markets/bonds/securities/FAKE_BOND.json").mock(
         return_value=Response(200, json=EMPTY_SECURITIES_RESPONSE)
     )
 
     with pytest.raises(InstrumentNotFoundError, match="Bond FAKE_BOND not found"):
-        await client.bond("FAKE_BOND")
+        _ = await client.bond("FAKE_BOND")
 
 
 @pytest.mark.asyncio
 async def test_get_bond_fallback_price_from_prev_weighted_price(
-    client, mock_moex
+    client: MoexClient, mock_moex: MockRouter
 ) -> None:
     """
     Проверка: если LAST отсутствует, модель берёт PREV или PREVWAPRICE.
@@ -66,7 +68,7 @@ async def test_get_bond_fallback_price_from_prev_weighted_price(
     В текущей модели Bond fallback устроен так:
     LAST = PREV or PREVWAPRICE
     """
-    response = {
+    response: dict[str, object] = {
         "securities": {
             "columns": [
                 "BOARDID",
@@ -107,7 +109,7 @@ async def test_get_bond_fallback_price_from_prev_weighted_price(
         },
     }
 
-    mock_moex.get("/engines/stock/markets/bonds/securities/SU26238RMFS4.json").mock(
+    _ = mock_moex.get("/engines/stock/markets/bonds/securities/SU26238RMFS4.json").mock(
         return_value=Response(200, json=response)
     )
 
@@ -120,7 +122,7 @@ async def test_get_bond_fallback_price_from_prev_weighted_price(
 
 @pytest.mark.asyncio
 async def test_get_bond_prefers_prev_over_prev_weighted_price(
-    client, mock_moex
+    client: MoexClient, mock_moex: MockRouter
 ) -> None:
     """
     Проверка: если LAST нет, но есть PREV и PREVWAPRICE, модель выбирает PREV.
@@ -128,7 +130,7 @@ async def test_get_bond_prefers_prev_over_prev_weighted_price(
     Это соответствует текущему валидатору:
     data["LAST"] = data.get("PREV") or data.get("PREVWAPRICE")
     """
-    response = {
+    response: dict[str, object] = {
         "securities": {
             "columns": [
                 "BOARDID",
@@ -171,7 +173,7 @@ async def test_get_bond_prefers_prev_over_prev_weighted_price(
         },
     }
 
-    mock_moex.get("/engines/stock/markets/bonds/securities/SU26238RMFS4.json").mock(
+    _ = mock_moex.get("/engines/stock/markets/bonds/securities/SU26238RMFS4.json").mock(
         return_value=Response(200, json=response)
     )
 
@@ -184,7 +186,9 @@ async def test_get_bond_prefers_prev_over_prev_weighted_price(
 
 
 @pytest.mark.asyncio
-async def test_get_bond_uses_uppercase_ticker(client, mock_moex) -> None:
+async def test_get_bond_uses_uppercase_ticker(
+    client: MoexClient, mock_moex: MockRouter
+) -> None:
     """
     Проверка: сервис нормализует тикер перед запросом.
     """

@@ -24,10 +24,11 @@ class MoexClient:
 
     def __init__(
         self,
+        session: MoexSession | None = None,
         cache: ICache | None = None,
         use_cache: bool = True,
     ) -> None:
-        self.session: MoexSession = MoexSession()
+        self.session: MoexSession = session or MoexSession()
 
         if not use_cache:
             self._cache: ICache = NullCache()
@@ -62,22 +63,22 @@ class MoexClient:
 
     async def share(self, ticker: str) -> Share:
         """Получить данные по акции."""
-        return await self.shares.get_share(ticker)
+        return await self.shares.get(ticker)
 
     async def bond(self, ticker: str) -> Bond:
         """Получить данные по облигации."""
-        return await self.bonds.get_bond(ticker)
+        return await self.bonds.get(ticker)
 
     async def fund(self, ticker: str) -> Share:
         """
         Получить данные по биржевому фонду.
         """
 
-        return await self.shares.get_share(ticker)
+        return await self.shares.get(ticker)
 
     async def currency(self, ticker: str) -> Currency:
         """Получить данные по валютной паре."""
-        return await self.currencies.get_currency(ticker)
+        return await self.currencies.get(ticker)
 
     async def find(
         self, query: str, instrument_type: InstrumentType | str | None = None
@@ -101,12 +102,12 @@ class MoexClient:
 
     async def dividends(self, ticker: str) -> list[Dividend]:
         """Получить данные по дивидендам."""
-        return await self.shares.get_dividends(ticker)
+        return await self.shares.dividends(ticker)
 
     async def coupons(self, ticker: str) -> list[Coupon]:
         """Асинхронно получить историю и график купонов по облигации."""
-        return await self.bonds.get_coupons(ticker)
+        return await self.bonds.coupons(ticker)
 
     async def amortizations(self, ticker: str) -> list[Amortization]:
         """Асинхронно получить график амортизации по облигации."""
-        return await self.bonds.get_amortizations(ticker)
+        return await self.bonds.amortizations(ticker)

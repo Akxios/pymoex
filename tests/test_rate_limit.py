@@ -1,3 +1,5 @@
+# pyright: reportPrivateUsage=false, reportUnknownArgumentType=false, reportUnknownLambdaType=false, reportUnknownMemberType=false
+
 from collections.abc import Iterator
 from itertools import chain, repeat
 

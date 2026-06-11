@@ -5,14 +5,11 @@ from typing import Protocol
 class ICache(Protocol):
     """
     Интерфейс кэша для pymoex.
-
-    Любая реализация (Redis, Memcached, FileSystem) должна поддерживать эти методы.
     """
 
     async def get(self, key: str) -> object | None:
         """
         Получить значение по ключу.
-        Вернуть None, если ключа нет или он истек.
         """
         ...
 
@@ -31,9 +28,6 @@ class ICache(Protocol):
     ) -> T:
         """
         Получить значение, если оно есть.
-        Если нет - выполнить асинхронную функцию factory(),
-        сохранить результат и вернуть его.
-        Желательно реализовать защиту от 'Cache Stampede' (склейку запросов).
         """
         ...
 

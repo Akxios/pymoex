@@ -50,17 +50,14 @@ async def show_bond(client: MoexClient, ticker: str) -> None:
 
     coupons = await client.coupons(ticker)
 
-    print("\nБлижайшие купоны:")
+    print("Все купоны:")
 
     if not coupons:
         print("Купоны не найдены.")
     else:
-        for coupon in coupons[:5]:
-            print(
-                " - "
-                f"{coupon.coupon_date}: "
-                f"{format_value(coupon.value, coupon.face_unit)}"
-            )
+        for coupon in coupons:
+            amount = format_value(coupon.value, coupon.face_unit)
+            print(f" - {coupon.coupon_date}: {amount}")
 
     amortizations = await client.amortizations(ticker)
 
@@ -70,11 +67,8 @@ async def show_bond(client: MoexClient, ticker: str) -> None:
         print("Без амортизации или данные не найдены.")
     else:
         for amortization in amortizations:
-            print(
-                " - "
-                f"{amortization.amort_date}: "
-                f"погашение {format_value(amortization.value, amortization.face_unit)}"
-            )
+            amount = format_value(amortization.value, amortization.face_unit)
+            print(f" - {amortization.amort_date}: погашение {amount}")
 
 
 async def main() -> None:

@@ -3,12 +3,13 @@ from decimal import Decimal
 import pytest
 from httpx import Response
 
+from pymoex.client import MoexClient
 from pymoex.exceptions import InstrumentNotFoundError
-from tests.conftest import EMPTY_SECURITIES_RESPONSE, MOEX_SHARE_JSON
+from tests.conftest import EMPTY_SECURITIES_RESPONSE, MOEX_SHARE_JSON, MockRouter
 
 
 @pytest.mark.asyncio
-async def test_get_share_success(client, mock_moex) -> None:
+async def test_get_share_success(client: MoexClient, mock_moex: MockRouter) -> None:
     """
     Проверка: успешное получение акции.
 
@@ -37,7 +38,7 @@ async def test_get_share_success(client, mock_moex) -> None:
 
 
 @pytest.mark.asyncio
-async def test_get_share_not_found(client, mock_moex) -> None:
+async def test_get_share_not_found(client: MoexClient, mock_moex: MockRouter) -> None:
     """
     Проверка: если securities пустой, выбрасывается InstrumentNotFoundError.
     """
@@ -46,13 +47,15 @@ async def test_get_share_not_found(client, mock_moex) -> None:
     )
 
     with pytest.raises(InstrumentNotFoundError, match="Share UNKNOWN not found"):
-        await client.share("UNKNOWN")
+        _ = await client.share("UNKNOWN")
 
     assert route.call_count == 1
 
 
 @pytest.mark.asyncio
-async def test_get_share_uses_uppercase_ticker(client, mock_moex) -> None:
+async def test_get_share_uses_uppercase_ticker(
+    client: MoexClient, mock_moex: MockRouter
+) -> None:
     """
     Проверка: сервис нормализует тикер перед запросом.
     """
@@ -67,11 +70,13 @@ async def test_get_share_uses_uppercase_ticker(client, mock_moex) -> None:
 
 
 @pytest.mark.asyncio
-async def test_get_share_fallback_price_from_close_price(client, mock_moex) -> None:
+async def test_get_share_fallback_price_from_close_price(
+    client: MoexClient, mock_moex: MockRouter
+) -> None:
     """
     Проверка: если LAST отсутствует, Share берёт CLOSEPRICE.
     """
-    response = {
+    response: dict[str, object] = {
         "securities": {
             "columns": [
                 "SECID",
@@ -116,7 +121,7 @@ async def test_get_share_fallback_price_from_close_price(client, mock_moex) -> N
         },
     }
 
-    mock_moex.get("/engines/stock/markets/shares/securities/SBER.json").mock(
+    _ = mock_moex.get("/engines/stock/markets/shares/securities/SBER.json").mock(
         return_value=Response(200, json=response)
     )
 
@@ -129,11 +134,13 @@ async def test_get_share_fallback_price_from_close_price(client, mock_moex) -> N
 
 
 @pytest.mark.asyncio
-async def test_get_share_fallback_price_from_prev_price(client, mock_moex) -> None:
+async def test_get_share_fallback_price_from_prev_price(
+    client: MoexClient, mock_moex: MockRouter
+) -> None:
     """
     Проверка: если LAST и CLOSEPRICE отсутствуют, Share берёт PREVPRICE.
     """
-    response = {
+    response: dict[str, object] = {
         "securities": {
             "columns": [
                 "SECID",
@@ -176,7 +183,7 @@ async def test_get_share_fallback_price_from_prev_price(client, mock_moex) -> No
         },
     }
 
-    mock_moex.get("/engines/stock/markets/shares/securities/SBER.json").mock(
+    _ = mock_moex.get("/engines/stock/markets/shares/securities/SBER.json").mock(
         return_value=Response(200, json=response)
     )
 
@@ -189,14 +196,14 @@ async def test_get_share_fallback_price_from_prev_price(client, mock_moex) -> No
 
 @pytest.mark.asyncio
 async def test_get_share_fallback_price_from_prev_weighted_price(
-    client,
-    mock_moex,
+    client: MoexClient,
+    mock_moex: MockRouter,
 ) -> None:
     """
     Проверка: если LAST, CLOSEPRICE и PREVPRICE отсутствуют,
     Share берёт PREVWAPRICE.
     """
-    response = {
+    response: dict[str, object] = {
         "securities": {
             "columns": [
                 "SECID",
@@ -239,7 +246,7 @@ async def test_get_share_fallback_price_from_prev_weighted_price(
         },
     }
 
-    mock_moex.get("/engines/stock/markets/shares/securities/SBER.json").mock(
+    _ = mock_moex.get("/engines/stock/markets/shares/securities/SBER.json").mock(
         return_value=Response(200, json=response)
     )
 

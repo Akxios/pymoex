@@ -2,10 +2,9 @@ import logging
 
 from pymoex.core import endpoints
 from pymoex.core.constants import CacheTTL
-from pymoex.core.interfaces import ICache
-from pymoex.core.session import MoexSession
 from pymoex.exceptions import InstrumentNotFoundError
 from pymoex.models.currency import Currency
+from pymoex.services.base import BaseService
 from pymoex.utils.boards import select_best_board
 from pymoex.utils.response import find_row_by_board, get_table, normalize_ticker
 from pymoex.utils.table import parse_table
@@ -15,12 +14,8 @@ logger = logging.getLogger(__name__)
 CURRENCY_MARKETS_TO_TRY: tuple[str, ...] = ("selt", "otcindices", "index")
 
 
-class CurrenciesService:
-    def __init__(self, session: MoexSession, cache: ICache) -> None:
-        self.session: MoexSession = session
-        self.cache: ICache = cache
-
-    async def get_currency(self, secid: str) -> Currency:
+class CurrenciesService(BaseService):
+    async def get(self, secid: str) -> Currency:
         """
         Получить валютный инструмент по реальному SECID MOEX.
         """

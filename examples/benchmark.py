@@ -24,7 +24,7 @@ class BenchmarkResult:
 
 async def run_case(
     name: str,
-    factory: Callable[[], Awaitable[list[Share | Exception]]],
+    factory: Callable[[], Awaitable[list[Share | BaseException]]],
 ) -> BenchmarkResult:
     """
     Запускает один benchmark-сценарий и печатает результат.
@@ -35,8 +35,14 @@ async def run_case(
     results = await factory()
     elapsed = time.perf_counter() - start
 
-    success = [item for item in results if not isinstance(item, Exception)]
-    errors = [item for item in results if isinstance(item, Exception)]
+    success: list[Share] = []
+    errors: list[BaseException] = []
+
+    for item in results:
+        if isinstance(item, BaseException):
+            errors.append(item)
+        else:
+            success.append(item)
 
     print(f"Всего вызовов: {len(results)}")
     print(f"Успешно: {len(success)}")
@@ -45,12 +51,12 @@ async def run_case(
 
     if success:
         example = success[0]
-        print(
-            "Пример: "
+        example_text = (
             f"{example.sec_id} | "
-            f"{example.short_name} | "
-            f"last={example.last_price}"
+            + f"{example.short_name} | "
+            + f"last={example.last_price}"
         )
+        print(f"Пример: {example_text}")
 
     if errors:
         print(f"Первая ошибка: {errors[0]!r}")
@@ -67,14 +73,12 @@ async def run_case(
 async def fetch_many_shares(
     client: MoexClient,
     tickers: list[str],
-) -> list[Share | Exception]:
+) -> list[Share | BaseException]:
     """
     Параллельно запрашивает список акций.
     """
     tasks = [client.share(ticker) for ticker in tickers]
-    results = await asyncio.gather(*tasks, return_exceptions=True)
-
-    return list(results)
+    return list(await asyncio.gather(*tasks, return_exceptions=True))
 
 
 async def benchmark_with_cache() -> BenchmarkResult:

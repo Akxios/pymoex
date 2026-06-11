@@ -1,14 +1,48 @@
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Iterator, Sequence
+from typing import Protocol, cast
 
 import pytest
 import pytest_asyncio
 import respx
+from httpx import Request, Response
 
 from pymoex.client import MoexClient
 from pymoex.core.config import MoexSettings
 
 type MoexTable = dict[str, object]
 type MoexResponse = dict[str, MoexTable]
+
+
+class MockCall(Protocol):
+    @property
+    def request(self) -> Request: ...
+
+
+class MockCalls(Protocol):
+    @property
+    def last(self) -> MockCall: ...
+
+
+class MockRoute(Protocol):
+    @property
+    def call_count(self) -> int: ...
+
+    @property
+    def calls(self) -> MockCalls: ...
+
+    def mock(
+        self,
+        *,
+        return_value: Response | None = None,
+        side_effect: object | None = None,
+    ) -> "MockRoute": ...
+
+
+class MockRouter(Protocol):
+    @property
+    def calls(self) -> Sequence[object]: ...
+
+    def get(self, path: str) -> MockRoute: ...
 
 
 @pytest.fixture
@@ -22,9 +56,9 @@ def moex_settings() -> MoexSettings:
 
 
 @pytest.fixture
-def mock_moex_api(moex_settings: MoexSettings):
+def mock_moex_api(moex_settings: MoexSettings) -> Iterator[MockRouter]:
     with respx.mock(base_url=moex_settings.base_url) as respx_mock:
-        yield respx_mock
+        yield cast(MockRouter, cast(object, respx_mock))
 
 
 def moex_table(columns: list[str], data: list[list[object]]) -> MoexTable:
@@ -327,6 +361,6 @@ async def client() -> AsyncIterator[MoexClient]:
 
 
 @pytest_asyncio.fixture
-async def mock_moex(client: MoexClient) -> AsyncIterator[respx.MockRouter]:
+async def mock_moex(client: MoexClient) -> AsyncIterator[MockRouter]:
     with respx.mock(base_url=client.session.settings.base_url) as respx_mock:
-        yield respx_mock
+        yield cast(MockRouter, cast(object, respx_mock))

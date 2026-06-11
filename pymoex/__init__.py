@@ -3,6 +3,7 @@
 import logging
 
 from .api import (
+    SyncMoexClient,
     find,
     find_bonds,
     find_currencies,
@@ -18,12 +19,13 @@ from .api import (
 )
 from .client import MoexClient
 
-__version__ = "0.1.6"
+__version__ = "0.1.7"
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 
 __all__ = [
     "MoexClient",
+    "SyncMoexClient",
     "find",
     "find_bonds",
     "find_currencies",

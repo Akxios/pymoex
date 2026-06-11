@@ -3,12 +3,15 @@ from decimal import Decimal
 import pytest
 from httpx import Response
 
+from pymoex.client import MoexClient
 from pymoex.exceptions import InstrumentNotFoundError
-from tests.conftest import EMPTY_SECURITIES_RESPONSE, MOEX_CURRENCY_JSON
+from tests.conftest import EMPTY_SECURITIES_RESPONSE, MOEX_CURRENCY_JSON, MockRouter
 
 
 @pytest.mark.asyncio
-async def test_currency_found_on_first_market(client, mock_moex) -> None:
+async def test_currency_found_on_first_market(
+    client: MoexClient, mock_moex: MockRouter
+) -> None:
     """
     Проверка: валюта найдена сразу на основном рынке selt.
     """
@@ -29,7 +32,9 @@ async def test_currency_found_on_first_market(client, mock_moex) -> None:
 
 
 @pytest.mark.asyncio
-async def test_currency_fallback_to_next_market(client, mock_moex) -> None:
+async def test_currency_fallback_to_next_market(
+    client: MoexClient, mock_moex: MockRouter
+) -> None:
     """
     Проверка: если на selt пусто, сервис пробует следующий рынок otcindices.
     """
@@ -37,7 +42,7 @@ async def test_currency_fallback_to_next_market(client, mock_moex) -> None:
         "/engines/currency/markets/selt/securities/USDRUBTOMOTC.json"
     ).mock(return_value=Response(200, json=EMPTY_SECURITIES_RESPONSE))
 
-    otc_response = {
+    otc_response: dict[str, object] = {
         "securities": {
             "columns": [
                 "BOARDID",
@@ -86,7 +91,9 @@ async def test_currency_fallback_to_next_market(client, mock_moex) -> None:
 
 
 @pytest.mark.asyncio
-async def test_currency_fallback_skips_failed_market(client, mock_moex) -> None:
+async def test_currency_fallback_skips_failed_market(
+    client: MoexClient, mock_moex: MockRouter
+) -> None:
     """
     Проверка: если первый рынок вернул HTTP-ошибку,
     сервис пробует следующий рынок.
@@ -104,7 +111,7 @@ async def test_currency_fallback_skips_failed_market(client, mock_moex) -> None:
         "/engines/currency/markets/selt/securities/USDRUBTOMOTC.json"
     ).mock(return_value=Response(500, json={"error": "server error"}))
 
-    otc_response = {
+    otc_response: dict[str, object] = {
         "securities": {
             "columns": [
                 "BOARDID",
@@ -151,9 +158,12 @@ async def test_currency_fallback_skips_failed_market(client, mock_moex) -> None:
 
 
 @pytest.mark.asyncio
-async def test_currency_not_found_anywhere(client, mock_moex) -> None:
+async def test_currency_not_found_anywhere(
+    client: MoexClient, mock_moex: MockRouter
+) -> None:
     """
-    Проверка: если валюта не найдена ни на одном рынке, выбрасывается InstrumentNotFoundError.
+    Проверка: если валюта не найдена ни на одном рынке,
+    выбрасывается InstrumentNotFoundError.
     """
     selt_route = mock_moex.get(
         "/engines/currency/markets/selt/securities/GHOST_TOM.json"
@@ -168,7 +178,7 @@ async def test_currency_not_found_anywhere(client, mock_moex) -> None:
     ).mock(return_value=Response(200, json=EMPTY_SECURITIES_RESPONSE))
 
     with pytest.raises(InstrumentNotFoundError, match="Currency GHOST_TOM not found"):
-        await client.currency("GHOST_TOM")
+        _ = await client.currency("GHOST_TOM")
 
     assert selt_route.call_count == 1
     assert otc_route.call_count == 1
@@ -176,11 +186,13 @@ async def test_currency_not_found_anywhere(client, mock_moex) -> None:
 
 
 @pytest.mark.asyncio
-async def test_currency_fallback_price_from_close_price(client, mock_moex) -> None:
+async def test_currency_fallback_price_from_close_price(
+    client: MoexClient, mock_moex: MockRouter
+) -> None:
     """
     Проверка: если LAST отсутствует, модель Currency берёт CLOSEPRICE/WAPRICE/PREVPRICE.
     """
-    response = {
+    response: dict[str, object] = {
         "securities": {
             "columns": [
                 "BOARDID",
@@ -219,7 +231,7 @@ async def test_currency_fallback_price_from_close_price(client, mock_moex) -> No
         },
     }
 
-    mock_moex.get("/engines/currency/markets/selt/securities/CNYRUB_TOM.json").mock(
+    _ = mock_moex.get("/engines/currency/markets/selt/securities/CNYRUB_TOM.json").mock(
         return_value=Response(200, json=response)
     )
 
@@ -231,7 +243,9 @@ async def test_currency_fallback_price_from_close_price(client, mock_moex) -> No
 
 
 @pytest.mark.asyncio
-async def test_currency_uses_uppercase_secid(client, mock_moex) -> None:
+async def test_currency_uses_uppercase_secid(
+    client: MoexClient, mock_moex: MockRouter
+) -> None:
     """
     Проверка: сервис нормализует secid перед запросом.
     """

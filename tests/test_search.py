@@ -1,12 +1,15 @@
 import pytest
 from httpx import Response
 
+from pymoex.client import MoexClient
 from pymoex.models.enums import InstrumentType
-from tests.conftest import MOEX_SEARCH_JSON
+from tests.conftest import MOEX_SEARCH_JSON, MockRouter
 
 
 @pytest.mark.asyncio
-async def test_find_all_returns_ranked_results(client, mock_moex) -> None:
+async def test_find_all_returns_ranked_results(
+    client: MoexClient, mock_moex: MockRouter
+) -> None:
     """
     Проверка: общий поиск возвращает подходящие результаты.
     """
@@ -28,7 +31,9 @@ async def test_find_all_returns_ranked_results(client, mock_moex) -> None:
 
 
 @pytest.mark.asyncio
-async def test_find_empty_response_returns_empty_list(client, mock_moex) -> None:
+async def test_find_empty_response_returns_empty_list(
+    client: MoexClient, mock_moex: MockRouter
+) -> None:
     """
     Проверка: если MOEX вернул пустую таблицу, возвращается пустой список.
     """
@@ -51,7 +56,9 @@ async def test_find_empty_response_returns_empty_list(client, mock_moex) -> None
 
 
 @pytest.mark.asyncio
-async def test_find_empty_query_does_not_call_api(client, mock_moex) -> None:
+async def test_find_empty_query_does_not_call_api(
+    client: MoexClient, mock_moex: MockRouter
+) -> None:
     """
     Проверка: пустой query сразу возвращает [],
     без HTTP-запроса.
@@ -63,7 +70,9 @@ async def test_find_empty_query_does_not_call_api(client, mock_moex) -> None:
 
 
 @pytest.mark.asyncio
-async def test_find_shares_filters_by_share_type(client, mock_moex) -> None:
+async def test_find_shares_filters_by_share_type(
+    client: MoexClient, mock_moex: MockRouter
+) -> None:
     """
     Проверка: find_shares() оставляет только акции.
     """
@@ -80,7 +89,9 @@ async def test_find_shares_filters_by_share_type(client, mock_moex) -> None:
 
 
 @pytest.mark.asyncio
-async def test_find_bonds_filters_by_bond_type(client, mock_moex) -> None:
+async def test_find_bonds_filters_by_bond_type(
+    client: MoexClient, mock_moex: MockRouter
+) -> None:
     """
     Проверка: find_bonds() оставляет только облигации.
     """
@@ -98,7 +109,9 @@ async def test_find_bonds_filters_by_bond_type(client, mock_moex) -> None:
 
 
 @pytest.mark.asyncio
-async def test_find_funds_filters_by_fund_type(client, mock_moex) -> None:
+async def test_find_funds_filters_by_fund_type(
+    client: MoexClient, mock_moex: MockRouter
+) -> None:
     """
     Проверка: find_funds() оставляет только фонды.
     """
@@ -116,7 +129,9 @@ async def test_find_funds_filters_by_fund_type(client, mock_moex) -> None:
 
 
 @pytest.mark.asyncio
-async def test_find_currencies_filters_by_currency_type(client, mock_moex) -> None:
+async def test_find_currencies_filters_by_currency_type(
+    client: MoexClient, mock_moex: MockRouter
+) -> None:
     """
     Проверка: find_currencies() оставляет только валютные инструменты.
     """
@@ -134,7 +149,9 @@ async def test_find_currencies_filters_by_currency_type(client, mock_moex) -> No
 
 
 @pytest.mark.asyncio
-async def test_find_accepts_instrument_type_string(client, mock_moex) -> None:
+async def test_find_accepts_instrument_type_string(
+    client: MoexClient, mock_moex: MockRouter
+) -> None:
     """
     Проверка: client.find(..., instrument_type='share')
     работает так же, как InstrumentType.SHARE.
@@ -150,7 +167,9 @@ async def test_find_accepts_instrument_type_string(client, mock_moex) -> None:
 
 
 @pytest.mark.asyncio
-async def test_find_accepts_instrument_type_enum(client, mock_moex) -> None:
+async def test_find_accepts_instrument_type_enum(
+    client: MoexClient, mock_moex: MockRouter
+) -> None:
     """
     Проверка: client.find(..., instrument_type=InstrumentType.BOND)
     фильтрует по enum.
@@ -167,16 +186,18 @@ async def test_find_accepts_instrument_type_enum(client, mock_moex) -> None:
 
 
 @pytest.mark.asyncio
-async def test_find_rejects_unknown_instrument_type(client) -> None:
+async def test_find_rejects_unknown_instrument_type(client: MoexClient) -> None:
     """
     Проверка: неизвестный тип инструмента даёт ValueError.
     """
     with pytest.raises(ValueError, match="Unknown instrument type"):
-        await client.find("SBER", instrument_type="unknown")
+        _ = await client.find("SBER", instrument_type="unknown")
 
 
 @pytest.mark.asyncio
-async def test_find_deduplicates_by_secid(client, mock_moex) -> None:
+async def test_find_deduplicates_by_secid(
+    client: MoexClient, mock_moex: MockRouter
+) -> None:
     """
     Проверка: если MOEX вернул один SECID несколько раз,
     результат содержит только первый вариант.
@@ -223,7 +244,9 @@ async def test_find_deduplicates_by_secid(client, mock_moex) -> None:
 
 
 @pytest.mark.asyncio
-async def test_find_sends_normalized_query_params(client, mock_moex) -> None:
+async def test_find_sends_normalized_query_params(
+    client: MoexClient, mock_moex: MockRouter
+) -> None:
     """
     Проверка: query нормализуется перед отправкой в MOEX.
 
@@ -233,7 +256,7 @@ async def test_find_sends_normalized_query_params(client, mock_moex) -> None:
         return_value=Response(200, json=MOEX_SEARCH_JSON)
     )
 
-    await client.find("  SBER  ")
+    _ = await client.find("  SBER  ")
 
     request = route.calls.last.request
 

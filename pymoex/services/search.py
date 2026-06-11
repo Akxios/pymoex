@@ -8,10 +8,9 @@ from pymoex.core.constants import (
     SHARE_GROUPS,
     CacheTTL,
 )
-from pymoex.core.interfaces import ICache
-from pymoex.core.session import MoexSession
 from pymoex.models.enums import InstrumentType
 from pymoex.models.search import Search
+from pymoex.services.base import BaseService
 from pymoex.utils.response import get_table
 from pymoex.utils.table import parse_table
 
@@ -27,14 +26,10 @@ GROUPS_BY_INSTRUMENT_TYPE = {
 }
 
 
-class SearchService:
+class SearchService(BaseService):
     """
     Сервис для поиска инструментов
     """
-
-    def __init__(self, session: MoexSession, cache: ICache) -> None:
-        self.session: MoexSession = session
-        self.cache: ICache = cache
 
     async def find(
         self,
