@@ -123,13 +123,3 @@ settings = MoexSettings(
     preferred_currency_boards=["CETS"],
 )
 ```
-
-## Proxy и авторизация
-
-В `MoexSettings` есть поля:
-
-- `proxy_url`
-- `username`
-- `password`
-
-На текущем этапе они зарезервированы в настройках.

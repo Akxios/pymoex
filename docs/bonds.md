@@ -171,5 +171,5 @@ print(f"Ближайший купон: {bond.next_coupon} ({bond.coupon_value} {
 
 ---
 
-#### [← Полный пример кода](../examples/bonds_usage.py)
+#### [← Полный пример кода](../examples/bond_usage.py)
 #### [← Вернуться к README](../README.md)
