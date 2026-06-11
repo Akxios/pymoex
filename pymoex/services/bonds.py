@@ -25,7 +25,7 @@ class BondsService(InstrumentService[Bond]):
     instrument_name: ClassVar[str] = "Bond"
     cache_prefix: ClassVar[str] = "bond"
     ttl: ClassVar[int] = CacheTTL.BOND_EVENTS_TTL_SECONDS
-    priority_boards_attr: ClassVar[str] = "preferred_share_boards"
+    priority_boards_attr: ClassVar[str] = "preferred_bond_boards"
 
     @override
     def get_model(self) -> type[Bond]:

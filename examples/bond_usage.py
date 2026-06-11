@@ -50,12 +50,12 @@ async def show_bond(client: MoexClient, ticker: str) -> None:
 
     coupons = await client.coupons(ticker)
 
-    print("\nБлижайшие купоны:")
+    print("Все купоны:")
 
     if not coupons:
         print("Купоны не найдены.")
     else:
-        for coupon in coupons[:5]:
+        for coupon in coupons:
             amount = format_value(coupon.value, coupon.face_unit)
             print(f" - {coupon.coupon_date}: {amount}")
 
