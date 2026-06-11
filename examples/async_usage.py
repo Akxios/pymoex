@@ -55,11 +55,8 @@ async def show_share(client: MoexClient, ticker: str) -> None:
         return
 
     for dividend in dividends[-5:]:
-        print(
-            " - "
-            f"Отсечка {dividend.registry_close_date}: "
-            f"{format_value(dividend.value, dividend.currency_id)}"
-        )
+        amount = format_value(dividend.value, dividend.currency_id)
+        print(f" - Отсечка {dividend.registry_close_date}: {amount}")
 
 
 async def show_bond(client: MoexClient, ticker: str) -> None:
@@ -95,11 +92,8 @@ async def show_bond(client: MoexClient, ticker: str) -> None:
         print("Купоны не найдены.")
     else:
         for coupon in coupons[:5]:
-            print(
-                " - "
-                f"{coupon.coupon_date}: "
-                f"{format_value(coupon.value, coupon.face_unit)}"
-            )
+            amount = format_value(coupon.value, coupon.face_unit)
+            print(f" - {coupon.coupon_date}: {amount}")
 
     amortizations = await client.amortizations(ticker)
 
@@ -109,11 +103,8 @@ async def show_bond(client: MoexClient, ticker: str) -> None:
         print("Без амортизации или данные не найдены.")
     else:
         for amortization in amortizations:
-            print(
-                " - "
-                f"{amortization.amort_date}: "
-                f"{format_value(amortization.value, amortization.face_unit)}"
-            )
+            amount = format_value(amortization.value, amortization.face_unit)
+            print(f" - {amortization.amort_date}: {amount}")
 
 
 async def show_currency(client: MoexClient, ticker: str) -> None:

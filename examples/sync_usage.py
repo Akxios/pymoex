@@ -62,11 +62,8 @@ def show_share(ticker: str) -> None:
         return
 
     for dividend in dividends[-5:]:
-        print(
-            " - "
-            f"Отсечка {dividend.registry_close_date}: "
-            f"{format_value(dividend.value, dividend.currency_id)}"
-        )
+        amount = format_value(dividend.value, dividend.currency_id)
+        print(f" - Отсечка {dividend.registry_close_date}: {amount}")
 
 
 def show_bond(ticker: str) -> None:
@@ -102,11 +99,8 @@ def show_bond(ticker: str) -> None:
         print("Купоны не найдены.")
     else:
         for coupon in coupons[:5]:
-            print(
-                " - "
-                f"{coupon.coupon_date}: "
-                f"{format_value(coupon.value, coupon.face_unit)}"
-            )
+            amount = format_value(coupon.value, coupon.face_unit)
+            print(f" - {coupon.coupon_date}: {amount}")
 
     amortizations = get_amortizations(ticker)
 
@@ -116,11 +110,8 @@ def show_bond(ticker: str) -> None:
         print("Без амортизации или данные не найдены.")
     else:
         for amortization in amortizations:
-            print(
-                " - "
-                f"{amortization.amort_date}: "
-                f"{format_value(amortization.value, amortization.face_unit)}"
-            )
+            amount = format_value(amortization.value, amortization.face_unit)
+            print(f" - {amortization.amort_date}: {amount}")
 
 
 def show_currency(ticker: str) -> None:

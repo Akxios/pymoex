@@ -54,11 +54,8 @@ async def show_share(client: MoexClient, ticker: str) -> None:
         return
 
     for dividend in dividends[-5:]:
-        print(
-            " - "
-            f"Отсечка {dividend.registry_close_date}: "
-            f"{format_value(dividend.value, dividend.currency_id)}"
-        )
+        amount = format_value(dividend.value, dividend.currency_id)
+        print(f" - Отсечка {dividend.registry_close_date}: {amount}")
 
 
 async def main() -> None:
