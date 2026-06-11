@@ -19,7 +19,7 @@ from .api import (
 )
 from .client import MoexClient
 
-__version__ = "0.1.6"
+__version__ = "0.1.7"
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 

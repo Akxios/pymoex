@@ -19,9 +19,6 @@ class MoexSettings(BaseSettings):
     - MOEX_LOG_LEVEL      (уровень логирования)
     - MOEX_REQUEST_DELAY  (базовая задержка между запросами, сек)
     - MOEX_REQUEST_JITTER (случайный jitter к задержке, сек)
-    - MOEX_PROXY_URL      (ссылка на прокси)
-    - MOEX_USERNAME       (имя пользователя)
-    - MOEX_PASSWORD       (пароль пользователя)
     - MOEX_RETRY_ATTEMPTS (число попыток)
     - MOEX_RETRY_MIN_WAIT (минимальное ожидание, сек)
     - MOEX_RETRY_MAX_WAIT (максимальное ожидание, сек)
@@ -30,16 +27,11 @@ class MoexSettings(BaseSettings):
 
     base_url: str = "https://iss.moex.com/iss"
     timeout: float = Field(default=10.0, gt=0)
-    user_agent: str = "pymoex-sdk/0.1.6"
+    user_agent: str = "pymoex-sdk/0.1.7"
     log_level: str = "WARNING"
 
     request_delay: float = Field(default=0.1, ge=0)
     request_jitter: float = Field(default=0.5, ge=0)
-
-    proxy_url: str | None = None
-
-    username: str | None = None
-    password: str | None = None
 
     preferred_share_boards: list[str] = Field(
         default_factory=lambda: ["TQBR", "TQTF", "FQBR", "TQTD"]
