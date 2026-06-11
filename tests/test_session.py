@@ -14,6 +14,7 @@ from pymoex.exceptions import (
     MoexServerError,
     MoexTimeoutError,
 )
+from tests.conftest import MockRouter
 
 
 @pytest.mark.asyncio
@@ -32,7 +33,7 @@ from pymoex.exceptions import (
     ],
 )
 async def test_session_maps_http_errors(
-    mock_moex,
+    mock_moex: MockRouter,
     status_code: int,
     expected_exception: type[Exception],
 ) -> None:
@@ -57,13 +58,13 @@ async def test_session_maps_http_errors(
         )
 
         with pytest.raises(expected_exception):
-            await session.get("/test.json")
+            _ = await session.get("/test.json")
 
         assert route.call_count == 1
 
 
 @pytest.mark.asyncio
-async def test_session_returns_dict_json(mock_moex) -> None:
+async def test_session_returns_dict_json(mock_moex: MockRouter) -> None:
     """
     Проверка: успешный JSON-объект возвращается как dict.
     """
@@ -84,7 +85,7 @@ async def test_session_returns_dict_json(mock_moex) -> None:
 
 
 @pytest.mark.asyncio
-async def test_session_removes_none_from_params(mock_moex) -> None:
+async def test_session_removes_none_from_params(mock_moex: MockRouter) -> None:
     """
     Проверка: параметры со значением None не должны улетать в запрос.
     """
@@ -98,7 +99,7 @@ async def test_session_removes_none_from_params(mock_moex) -> None:
             return_value=Response(200, json={"data": "ok"})
         )
 
-        await session.get(
+        _ = await session.get(
             "/test.json",
             params={
                 "iss.meta": "off",
@@ -124,7 +125,7 @@ async def test_session_removes_none_from_params(mock_moex) -> None:
     ],
 )
 async def test_session_invalid_json_raises_parse_error(
-    mock_moex,
+    mock_moex: MockRouter,
     invalid_json_body: str,
 ) -> None:
     """
@@ -141,7 +142,7 @@ async def test_session_invalid_json_raises_parse_error(
         )
 
         with pytest.raises(MoexResponseParseError):
-            await session.get("/invalid.json")
+            _ = await session.get("/invalid.json")
 
         assert route.call_count == 1
 
@@ -158,7 +159,7 @@ async def test_session_invalid_json_raises_parse_error(
     ],
 )
 async def test_session_non_dict_json_raises_parse_error(
-    mock_moex,
+    mock_moex: MockRouter,
     json_body: object,
 ) -> None:
     """
@@ -176,13 +177,13 @@ async def test_session_non_dict_json_raises_parse_error(
         )
 
         with pytest.raises(MoexResponseParseError):
-            await session.get("/non-dict.json")
+            _ = await session.get("/non-dict.json")
 
         assert route.call_count == 1
 
 
 @pytest.mark.asyncio
-async def test_session_retries_5xx_errors(mock_moex) -> None:
+async def test_session_retries_5xx_errors(mock_moex: MockRouter) -> None:
     """
     Проверка: 5xx ошибки повторяются согласно retry_attempts.
     """
@@ -200,13 +201,13 @@ async def test_session_retries_5xx_errors(mock_moex) -> None:
         )
 
         with pytest.raises(MoexServerError):
-            await session.get("/server-error.json")
+            _ = await session.get("/server-error.json")
 
         assert route.call_count == 3
 
 
 @pytest.mark.asyncio
-async def test_session_retries_then_succeeds(mock_moex) -> None:
+async def test_session_retries_then_succeeds(mock_moex: MockRouter) -> None:
     """
     Проверка: если первый запрос вернул 500, а второй 200,
     session.get() возвращает успешный JSON.
@@ -234,7 +235,7 @@ async def test_session_retries_then_succeeds(mock_moex) -> None:
 
 
 @pytest.mark.asyncio
-async def test_session_timeout_error_is_mapped(mock_moex) -> None:
+async def test_session_timeout_error_is_mapped(mock_moex: MockRouter) -> None:
     """
     Проверка: httpx.TimeoutException превращается в MoexTimeoutError.
     """
@@ -250,13 +251,13 @@ async def test_session_timeout_error_is_mapped(mock_moex) -> None:
         )
 
         with pytest.raises(MoexTimeoutError):
-            await session.get("/timeout.json")
+            _ = await session.get("/timeout.json")
 
         assert route.call_count == 1
 
 
 @pytest.mark.asyncio
-async def test_session_network_error_is_mapped(mock_moex) -> None:
+async def test_session_network_error_is_mapped(mock_moex: MockRouter) -> None:
     """
     Проверка: httpx.RequestError превращается в MoexNetworkError.
     """
@@ -272,6 +273,6 @@ async def test_session_network_error_is_mapped(mock_moex) -> None:
         )
 
         with pytest.raises(MoexNetworkError):
-            await session.get("/network.json")
+            _ = await session.get("/network.json")
 
         assert route.call_count == 1

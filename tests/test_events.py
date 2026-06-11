@@ -4,11 +4,12 @@ from decimal import Decimal
 import pytest
 from httpx import Response
 
-from tests.conftest import MOEX_BONDIZATION_JSON, MOEX_DIVIDENDS_JSON
+from pymoex.client import MoexClient
+from tests.conftest import MOEX_BONDIZATION_JSON, MOEX_DIVIDENDS_JSON, MockRouter
 
 
 @pytest.mark.asyncio
-async def test_get_dividends_success(client, mock_moex) -> None:
+async def test_get_dividends_success(client: MoexClient, mock_moex: MockRouter) -> None:
     """
     Проверка: успешный парсинг списка дивидендов.
     """
@@ -31,7 +32,7 @@ async def test_get_dividends_success(client, mock_moex) -> None:
 
 
 @pytest.mark.asyncio
-async def test_get_dividends_empty(client, mock_moex) -> None:
+async def test_get_dividends_empty(client: MoexClient, mock_moex: MockRouter) -> None:
     """
     Проверка: если дивидендов нет, возвращается пустой список.
     """
@@ -54,7 +55,7 @@ async def test_get_dividends_empty(client, mock_moex) -> None:
 
 
 @pytest.mark.asyncio
-async def test_get_coupons_success(client, mock_moex) -> None:
+async def test_get_coupons_success(client: MoexClient, mock_moex: MockRouter) -> None:
     """
     Проверка: успешный парсинг купонов по облигации.
     """
@@ -80,7 +81,7 @@ async def test_get_coupons_success(client, mock_moex) -> None:
 
 
 @pytest.mark.asyncio
-async def test_get_coupons_empty(client, mock_moex) -> None:
+async def test_get_coupons_empty(client: MoexClient, mock_moex: MockRouter) -> None:
     """
     Проверка: если купонов нет, возвращается пустой список.
     """
@@ -103,7 +104,9 @@ async def test_get_coupons_empty(client, mock_moex) -> None:
 
 
 @pytest.mark.asyncio
-async def test_get_amortizations_success(client, mock_moex) -> None:
+async def test_get_amortizations_success(
+    client: MoexClient, mock_moex: MockRouter
+) -> None:
     """
     Проверка: успешный парсинг амортизаций по облигации.
     """
@@ -128,7 +131,9 @@ async def test_get_amortizations_success(client, mock_moex) -> None:
 
 
 @pytest.mark.asyncio
-async def test_get_amortizations_empty(client, mock_moex) -> None:
+async def test_get_amortizations_empty(
+    client: MoexClient, mock_moex: MockRouter
+) -> None:
     """
     Проверка: если амортизаций нет, возвращается пустой список.
     """
@@ -151,7 +156,9 @@ async def test_get_amortizations_empty(client, mock_moex) -> None:
 
 
 @pytest.mark.asyncio
-async def test_get_amortizations_missing_table(client, mock_moex) -> None:
+async def test_get_amortizations_missing_table(
+    client: MoexClient, mock_moex: MockRouter
+) -> None:
     """
     Проверка: если таблицы amortizations нет в ответе, возвращается пустой список.
     """

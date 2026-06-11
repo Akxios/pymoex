@@ -228,9 +228,9 @@ async def test_memory_cache_retries_factory_after_error() -> None:
         raise ValueError("Network Down")
 
     with pytest.raises(ValueError, match="Network Down"):
-        await cache.get_or_set("bad_key", failing_factory)
+        _ = await cache.get_or_set("bad_key", failing_factory)
 
     with pytest.raises(ValueError, match="Network Down"):
-        await cache.get_or_set("bad_key", failing_factory)
+        _ = await cache.get_or_set("bad_key", failing_factory)
 
     assert factory_calls == 2

@@ -45,4 +45,4 @@ async def test_sync_api_rejects_running_event_loop() -> None:
     Проверка: sync API нельзя использовать внутри уже запущенного event loop.
     """
     with pytest.raises(RuntimeError, match="Cannot use sync API"):
-        get_share("SBER")
+        _ = get_share("SBER")

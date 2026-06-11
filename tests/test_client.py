@@ -1,3 +1,5 @@
+# pyright: reportPrivateUsage=false
+
 from unittest.mock import AsyncMock
 
 import pytest
@@ -92,11 +94,11 @@ async def test_client_proxies_search_calls(
     monkeypatch.setattr(client.search, "find", search_find_mock)
 
     try:
-        await client.find("SBER")
-        await client.find_shares("SBER")
-        await client.find_bonds("OFZ")
-        await client.find_funds("SBMX")
-        await client.find_currencies("CNY")
+        _ = await client.find("SBER")
+        _ = await client.find_shares("SBER")
+        _ = await client.find_bonds("OFZ")
+        _ = await client.find_funds("SBMX")
+        _ = await client.find_currencies("CNY")
     finally:
         await client.close()
 
@@ -158,9 +160,9 @@ async def test_client_proxies_event_calls(
     monkeypatch.setattr(client.bonds, "amortizations", get_amortizations_mock)
 
     try:
-        await client.dividends("SBER")
-        await client.coupons("SU26238RMFS4")
-        await client.amortizations("SU26238RMFS4")
+        _ = await client.dividends("SBER")
+        _ = await client.coupons("SU26238RMFS4")
+        _ = await client.amortizations("SU26238RMFS4")
     finally:
         await client.close()
 
