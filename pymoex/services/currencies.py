@@ -2,11 +2,19 @@ import logging
 
 from pymoex.core import endpoints
 from pymoex.core.constants import CacheTTL
-from pymoex.exceptions import InstrumentNotFoundError
+from pymoex.exceptions import (
+    InstrumentNotFoundError,
+    MoexAuthError,
+    MoexBadRequestError,
+    MoexNetworkError,
+    MoexNotFoundError,
+    MoexRateLimitError,
+)
 from pymoex.models.currency import Currency
 from pymoex.services.base import BaseService
+from pymoex.utils.aliases import resolve_currency_secid
 from pymoex.utils.boards import select_best_board
-from pymoex.utils.response import find_row_by_board, get_table, normalize_ticker
+from pymoex.utils.response import find_row_by_board, get_table
 from pymoex.utils.table import parse_table
 
 logger = logging.getLogger(__name__)
@@ -19,7 +27,7 @@ class CurrenciesService(BaseService):
         """
         Получить валютный инструмент по реальному SECID MOEX.
         """
-        secid = normalize_ticker(secid)
+        secid = resolve_currency_secid(secid)
         cache_key = f"currency:{secid}"
 
         async def _fetch() -> Currency:
@@ -33,6 +41,9 @@ class CurrenciesService(BaseService):
         )
 
     async def _load_currency_data(self, secid: str) -> dict[str, object]:
+        last_error: MoexNetworkError | None = None
+        found_empty_response = False
+
         for market in CURRENCY_MARKETS_TO_TRY:
             try:
                 data = await self.session.get(endpoints.currency(secid, market=market))
@@ -40,9 +51,21 @@ class CurrenciesService(BaseService):
 
                 if securities.get("data"):
                     return data
-            except Exception as e:
+                found_empty_response = True
+            except MoexNotFoundError:
+                found_empty_response = True
+            except MoexNetworkError as e:
+                if isinstance(
+                    e,
+                    (MoexAuthError, MoexBadRequestError, MoexRateLimitError),
+                ):
+                    raise
                 logger.debug("Market '%s' failed for %s: %s", market, secid, e)
+                last_error = e
                 continue
+
+        if last_error is not None and not found_empty_response:
+            raise last_error
 
         logger.warning("Currency %s not found in MOEX response", secid)
         raise InstrumentNotFoundError(f"Currency {secid} not found")

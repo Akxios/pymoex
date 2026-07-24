@@ -29,6 +29,7 @@ class MoexClient:
         use_cache: bool = True,
     ) -> None:
         self.session: MoexSession = session or MoexSession()
+        self._owns_cache: bool = cache is None
 
         if not use_cache:
             self._cache: ICache = NullCache()
@@ -47,7 +48,8 @@ class MoexClient:
     async def close(self) -> None:
         """Закрыть HTTP-сессию и очистить ресурсы кэша."""
 
-        await self._cache.clear()
+        if self._owns_cache:
+            await self._cache.clear()
         await self.session.close()
 
     async def __aenter__(self) -> Self:
