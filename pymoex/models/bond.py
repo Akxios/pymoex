@@ -244,10 +244,17 @@ class Bond(BaseInstrument):
         Если нет цены сделки (LAST), ищем цену закрытия или предыдущего дня.
         """
 
-        if not data.get("LAST"):
-            data["LAST"] = data.get("PREV") or data.get("PREVWAPRICE")
+        if data.get("LAST") is None:
+            data["LAST"] = next(
+                (
+                    value
+                    for value in (data.get("PREV"), data.get("PREVWAPRICE"))
+                    if value is not None
+                ),
+                None,
+            )
 
-        if not data.get("EFFECTIVEYIELD"):
+        if data.get("EFFECTIVEYIELD") is None:
             data["EFFECTIVEYIELD"] = data.get("YIELD")
 
         return data

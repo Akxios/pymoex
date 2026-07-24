@@ -79,9 +79,18 @@ class Currency(BaseInstrument):
         Если нет цены сделки (LAST), ищем цену закрытия, средневзвешенную
         или цену предыдущего дня.
         """
-        if not data.get("LAST"):
-            data["LAST"] = (
-                data.get("CLOSEPRICE") or data.get("WAPRICE") or data.get("PREVPRICE")
+        if data.get("LAST") is None:
+            data["LAST"] = next(
+                (
+                    value
+                    for value in (
+                        data.get("CLOSEPRICE"),
+                        data.get("WAPRICE"),
+                        data.get("PREVPRICE"),
+                    )
+                    if value is not None
+                ),
+                None,
             )
 
         return data
