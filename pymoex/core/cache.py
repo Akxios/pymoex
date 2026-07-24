@@ -47,6 +47,9 @@ class MemoryCache(ICache):
     """
 
     def __init__(self, ttl: int = 60, maxsize: int = 1000) -> None:
+        if maxsize <= 0:
+            raise ValueError("maxsize must be greater than zero")
+
         self.ttl: int = ttl
         self.maxsize: int = maxsize
 
@@ -116,15 +119,18 @@ class MemoryCache(ICache):
 
             return result
 
-        except Exception as e:
+        except BaseException as e:
             logger.exception("Cache load failed", extra={"key": key})
 
             async with self._lock:
                 _ = self._pending.pop(key, None)
 
             if not future.done():
-                future.set_exception(e)
-                future.add_done_callback(lambda f: f.exception())
+                if isinstance(e, asyncio.CancelledError):
+                    _ = future.cancel()
+                else:
+                    future.set_exception(e)
+                    future.add_done_callback(lambda f: f.exception())
 
             raise
 
@@ -134,6 +140,12 @@ class MemoryCache(ICache):
         async with self._lock:
             self._data.clear()
             self._order.clear()
+            pending = list(self._pending.values())
+            self._pending.clear()
+
+        for future in pending:
+            if not future.done():
+                _ = future.cancel()
 
     def _get_locked(self, key: str) -> object | None:
         """Безопасное получение значения без блокировки"""
