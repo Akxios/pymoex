@@ -4,7 +4,9 @@ import pytest
 from httpx import Response
 
 from pymoex.client import MoexClient
+from pymoex.core.constants import CacheTTL
 from pymoex.exceptions import InstrumentNotFoundError
+from pymoex.models.bond import Bond
 from tests.conftest import EMPTY_SECURITIES_RESPONSE, MOEX_BOND_JSON, MockRouter
 
 
@@ -42,6 +44,28 @@ async def test_get_bond_success(client: MoexClient, mock_moex: MockRouter) -> No
 
     assert bond.last_price == Decimal("725")
     assert bond.last_dirty_price == Decimal("737.3")
+
+
+def test_bonds_service_uses_quote_ttl() -> None:
+    client = MoexClient()
+
+    assert client.bonds.ttl == CacheTTL.BOND_TTL_SECONDS
+
+
+def test_bond_preserves_zero_price_and_yield() -> None:
+    bond = Bond.model_validate(
+        {
+            "SECID": "SU26238RMFS4",
+            "SHORTNAME": "ОФЗ 26238",
+            "LAST": 0,
+            "PREV": 70.1,
+            "EFFECTIVEYIELD": 0,
+            "YIELD": 14.2,
+        }
+    )
+
+    assert bond.price_percent == Decimal("0")
+    assert bond.effective_yield == Decimal("0")
 
 
 @pytest.mark.asyncio

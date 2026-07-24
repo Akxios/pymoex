@@ -85,6 +85,24 @@ async def test_client_close_clears_cache_and_closes_session(
 
 
 @pytest.mark.asyncio
+async def test_client_close_does_not_clear_custom_cache(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    custom_cache = MemoryCache()
+    client = MoexClient(cache=custom_cache)
+    cache_clear_mock = AsyncMock()
+    session_close_mock = AsyncMock()
+
+    monkeypatch.setattr(custom_cache, "clear", cache_clear_mock)
+    monkeypatch.setattr(client.session, "close", session_close_mock)
+
+    await client.close()
+
+    cache_clear_mock.assert_not_awaited()
+    session_close_mock.assert_awaited_once()
+
+
+@pytest.mark.asyncio
 async def test_client_proxies_search_calls(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

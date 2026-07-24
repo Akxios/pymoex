@@ -5,6 +5,7 @@ from httpx import Response
 
 from pymoex.client import MoexClient
 from pymoex.exceptions import InstrumentNotFoundError
+from pymoex.models.share import Share
 from tests.conftest import EMPTY_SECURITIES_RESPONSE, MOEX_SHARE_JSON, MockRouter
 
 
@@ -35,6 +36,19 @@ async def test_get_share_success(client: MoexClient, mock_moex: MockRouter) -> N
     assert share.lot_size == 10
 
     assert route.call_count == 1
+
+
+def test_share_preserves_zero_last_price() -> None:
+    share = Share.model_validate(
+        {
+            "SECID": "SBER",
+            "SHORTNAME": "Сбербанк",
+            "LAST": 0,
+            "CLOSEPRICE": 281.1,
+        }
+    )
+
+    assert share.last_price == Decimal("0")
 
 
 @pytest.mark.asyncio

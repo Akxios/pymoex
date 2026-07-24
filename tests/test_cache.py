@@ -145,6 +145,11 @@ async def test_memory_cache_lru_eviction() -> None:
     assert await cache.get("C") == 3
 
 
+def test_memory_cache_rejects_non_positive_maxsize() -> None:
+    with pytest.raises(ValueError, match="maxsize must be greater than zero"):
+        _ = MemoryCache(maxsize=0)
+
+
 @pytest.mark.asyncio
 async def test_memory_cache_clear_removes_values() -> None:
     """
@@ -159,6 +164,35 @@ async def test_memory_cache_clear_removes_values() -> None:
 
     assert await cache.get("A") is None
     assert await cache.get("B") is None
+
+
+@pytest.mark.asyncio
+async def test_memory_cache_cancellation_unblocks_waiters() -> None:
+    cache = MemoryCache()
+    factory_started = asyncio.Event()
+    release_factory = asyncio.Event()
+
+    async def slow_factory() -> str:
+        _ = factory_started.set()
+        _ = await release_factory.wait()
+        return "loaded"
+
+    initiator = asyncio.create_task(cache.get_or_set("key", slow_factory))
+    _ = await factory_started.wait()
+    waiter = asyncio.create_task(cache.get_or_set("key", slow_factory))
+    await asyncio.sleep(0)
+
+    _ = initiator.cancel()
+
+    with pytest.raises(asyncio.CancelledError):
+        _ = await initiator
+    with pytest.raises(asyncio.CancelledError):
+        _ = await waiter
+
+    async def replacement_factory() -> str:
+        return "replacement"
+
+    assert await cache.get_or_set("key", replacement_factory) == "replacement"
 
 
 @pytest.mark.asyncio

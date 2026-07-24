@@ -4,7 +4,8 @@ import pytest
 from httpx import Response
 
 from pymoex.client import MoexClient
-from pymoex.exceptions import InstrumentNotFoundError
+from pymoex.exceptions import InstrumentNotFoundError, MoexAuthError, MoexServerError
+from pymoex.models.currency import Currency
 from tests.conftest import EMPTY_SECURITIES_RESPONSE, MOEX_CURRENCY_JSON, MockRouter
 
 
@@ -29,6 +30,19 @@ async def test_currency_found_on_first_market(
     assert currency.lot_size == 1000
 
     assert route.call_count == 1
+
+
+def test_currency_preserves_zero_last_price() -> None:
+    currency = Currency.model_validate(
+        {
+            "SECID": "CNYRUB_TOM",
+            "SHORTNAME": "CNY/RUB TOM",
+            "LAST": 0,
+            "CLOSEPRICE": 12.31,
+        }
+    )
+
+    assert currency.last_price == Decimal("0")
 
 
 @pytest.mark.asyncio
@@ -257,3 +271,48 @@ async def test_currency_uses_uppercase_secid(
 
     assert currency.sec_id == "CNYRUB_TOM"
     assert route.call_count == 1
+
+
+@pytest.mark.asyncio
+async def test_currency_resolves_alias_in_async_api(
+    client: MoexClient, mock_moex: MockRouter
+) -> None:
+    route = mock_moex.get(
+        "/engines/currency/markets/selt/securities/CNYRUB_TOM.json"
+    ).mock(return_value=Response(200, json=MOEX_CURRENCY_JSON))
+
+    currency = await client.currency("CNY")
+
+    assert currency.sec_id == "CNYRUB_TOM"
+    assert route.call_count == 1
+
+
+@pytest.mark.asyncio
+async def test_currency_propagates_auth_error(
+    client: MoexClient, mock_moex: MockRouter
+) -> None:
+    route = mock_moex.get(
+        "/engines/currency/markets/selt/securities/CNYRUB_TOM.json"
+    ).mock(return_value=Response(401, json={"error": "unauthorized"}))
+
+    with pytest.raises(MoexAuthError):
+        _ = await client.currency("CNYRUB_TOM")
+
+    assert route.call_count == 1
+
+
+@pytest.mark.asyncio
+async def test_currency_propagates_network_error_when_all_markets_fail(
+    client: MoexClient, mock_moex: MockRouter
+) -> None:
+    client.session.settings.retry_attempts = 1
+    client.session.settings.retry_min_wait = 0
+    client.session.settings.retry_max_wait = 0
+
+    for market in ("selt", "otcindices", "index"):
+        _ = mock_moex.get(
+            f"/engines/currency/markets/{market}/securities/CNYRUB_TOM.json"
+        ).mock(return_value=Response(500, json={"error": "unavailable"}))
+
+    with pytest.raises(MoexServerError):
+        _ = await client.currency("CNYRUB_TOM")
