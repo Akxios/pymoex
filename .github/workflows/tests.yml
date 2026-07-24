@@ -32,3 +32,9 @@ jobs:
 
       - name: Run tests
         run: uv run pytest tests/ -v
+
+      - name: Check formatting and lint
+        run: uv run ruff format --check . && uv run ruff check .
+
+      - name: Check types
+        run: uv run basedpyright
