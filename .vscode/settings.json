@@ -1,6 +1,6 @@
 {
+  "python.useEnvironmentsExtension": false,
   "python.terminal.activateEnvironment": true,
-  "python.languageServer": "None",
 
   "[python]": {
     "editor.defaultFormatter": "charliermarsh.ruff",
@@ -10,5 +10,7 @@
       "source.organizeImports": "explicit"
     }
   },
-  "editor.inlayHints.enabled": "offUnlessPressed"
+
+  "editor.inlayHints.enabled": "offUnlessPressed",
+  "python.languageServer": "None",
 }
