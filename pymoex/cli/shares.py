@@ -8,6 +8,7 @@ from pymoex.cli.output import print_error, print_items, print_success
 from pymoex.models.dividend import Dividend
 from pymoex.models.search import Search
 from pymoex.models.share import Share
+from pymoex.utils.format_value import format_value
 
 share_app: Typer = typer.Typer(help="Работа с акциями")
 
@@ -56,5 +57,12 @@ def share_divs(
     Синхронный поиск дивидендов по строке.
     """
 
-    results: list[Dividend] = get_dividends(ticker=query)
-    print_items(results, title="Найдено")
+    dividends: list[Dividend] = get_dividends(ticker=query)
+
+    if not dividends:
+        print("Дивиденды не выплачивались или данные отсутствуют.")
+        return
+
+    for dividend in dividends[-5:]:
+        amount = format_value(dividend.value, dividend.currency_id)
+        print(f" - Отсечка {dividend.registry_close_date}: {amount}")

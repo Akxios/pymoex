@@ -1,22 +1,9 @@
 import asyncio
-from decimal import Decimal
 
 from pymoex import MoexClient
 from pymoex.exceptions import InstrumentNotFoundError
 from pymoex.models.currency import Currency
-
-
-def format_value(value: object | None) -> str:
-    """
-    Красиво форматирует значение для вывода в консоль.
-    """
-    if value is None:
-        return "—"
-
-    if isinstance(value, Decimal):
-        return f"{value:.4f}".rstrip("0").rstrip(".")
-
-    return str(value)
+from pymoex.utils.format_value import format_value
 
 
 async def show_currency(client: MoexClient, ticker: str, title: str) -> None:

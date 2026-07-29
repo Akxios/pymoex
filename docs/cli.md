@@ -37,12 +37,14 @@ moex share find "Сбербанк"
 - `moex bond info "ТИКЕР"` — Получить текущие данные об облигации, цену, НКД и доходность.
 - `moex bond find "ЗАПРОС"` — Поиск только среди облигаций.
 - `moex bond coupons "ТИКЕР"` — Вывести историю и график будущих купонов.
+- `moex bond amortizations "ТИКЕР"` — Вывести историю и график будущих выплат.
 
 Примеры:
 ```bash
 moex bond info RU000A10DS74
-moex bond coupons SU26238RMFS4
 moex bond find "ОФЗ"
+moex bond coupons SU26238RMFS4
+moex bond amortizations RU000A10DS74
 ```
 
 [← Вернуться к README](../README.md)

@@ -1,5 +1,3 @@
-from decimal import Decimal
-
 from pymoex import (
     find,
     get_amortizations,
@@ -13,24 +11,7 @@ from pymoex.exceptions import InstrumentNotFoundError
 from pymoex.models.bond import Bond
 from pymoex.models.currency import Currency
 from pymoex.models.share import Share
-
-
-def format_value(value: object | None, suffix: str | None = None) -> str:
-    """
-    Красиво форматирует значение для вывода в консоль.
-    """
-    if value is None:
-        return "—"
-
-    if isinstance(value, Decimal):
-        text = f"{value:.4f}".rstrip("0").rstrip(".")
-    else:
-        text = str(value)
-
-    if suffix:
-        return f"{text} {suffix}"
-
-    return text
+from pymoex.utils.format_value import format_value
 
 
 def show_share(ticker: str) -> None:
