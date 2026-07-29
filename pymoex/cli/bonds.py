@@ -3,10 +3,10 @@ from typing import Annotated
 import typer
 from typer.main import Typer
 
-from pymoex.api import find_bonds, get_bond, get_coupons
+from pymoex.api import find_bonds, get_amortizations, get_bond, get_coupons
 from pymoex.cli.output import print_error, print_items, print_success
 from pymoex.models.bond import Bond
-from pymoex.models.bondization import Coupon
+from pymoex.models.bondization import Amortization, Coupon
 from pymoex.models.search import Search
 
 bond_app: Typer = typer.Typer(help="Работа с облигациями")
@@ -57,4 +57,19 @@ def bond_coupons(
     """
 
     results: list[Coupon] = get_coupons(ticker=query)
+    print_items(results)
+
+
+@bond_app.command(name="amortizations")
+def bond_amortizations(
+    query: Annotated[
+        str,
+        typer.Argument(..., help="Тикер, название, ISIN, эмитент"),
+    ],
+) -> None:
+    """
+    Синхронный поиск амортизаций облигации по строке.
+    """
+
+    results: list[Amortization] = get_amortizations(ticker=query)
     print_items(results)
