@@ -2,6 +2,7 @@
 
 import logging
 
+from ._version import __version__
 from .api import (
     SyncMoexClient,
     find,
@@ -19,11 +20,10 @@ from .api import (
 )
 from .client import MoexClient
 
-__version__ = "0.1.8"
-
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 
 __all__ = [
+    "__version__",
     "MoexClient",
     "SyncMoexClient",
     "find",

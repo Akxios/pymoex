@@ -3,6 +3,8 @@ from typing import ClassVar
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from pymoex._version import __version__
+
 
 class MoexSettings(BaseSettings):
     """
@@ -27,11 +29,11 @@ class MoexSettings(BaseSettings):
 
     base_url: str = "https://iss.moex.com/iss"
     timeout: float = Field(default=10.0, gt=0)
-    user_agent: str = "pymoex-sdk/0.1.7"
+    user_agent: str = f"pymoex-sdk/{__version__}"
     log_level: str = "WARNING"
 
     request_delay: float = Field(default=0.1, ge=0)
-    request_jitter: float = Field(default=0.5, ge=0)
+    request_jitter: float = Field(default=0.05, ge=0)
 
     preferred_share_boards: list[str] = Field(
         default_factory=lambda: ["TQBR", "TQTF", "FQBR", "TQTD"]
