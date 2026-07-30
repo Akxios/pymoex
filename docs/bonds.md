@@ -2,7 +2,7 @@
 
 Модели и поля, доступные для рынка облигаций Московской биржи через `pymoex`.
 
-> Полный список полей доступен в [MOEX ISS](https://iss.moex.com/iss/engines/stock/markets/bonds/).
+> Полный список полей доступен на [MOEX ISS](https://iss.moex.com/iss/engines/stock/markets/bonds/).
 
 ---
 
@@ -30,6 +30,7 @@ print(f"Ближайший купон: {bond.next_coupon} ({bond.coupon_value} {
 ```
 
 ## Модели данных
+
 ### `Securities` - параметры инструмента
 
 Статические параметры выпуска: идентификаторы, номинал, купон,
@@ -52,6 +53,7 @@ print(f"Ближайший купон: {bond.next_coupon} ({bond.coupon_value} {
 | `BONDSUBTYPE` | `bond_sub_type` | `str` | Подвид облигации |
 
 #### Параметры номинала
+
 | MOEX ISS | `pymoex` | Тип | Описание |
 | --- | --- | --- | --- |
 | `FACEVALUE` | `face_value` |  `Decimal` | Непогашенный долг |
@@ -64,6 +66,7 @@ print(f"Ближайший купон: {bond.next_coupon} ({bond.coupon_value} {
 | `ISSUESIZEPLACED` | `issue_size_placed` |  `int` | Количество ценных бумаг в обращении |
 
 #### Купоны и доходность
+
 | MOEX ISS | `pymoex` | Тип | Описание |
 | --- | --- | --- | --- |
 | `COUPONVALUE` | `coupon_value` |  `Decimal` | Сумма купона, в валюте номинала |
@@ -73,6 +76,7 @@ print(f"Ближайший купон: {bond.next_coupon} ({bond.coupon_value} {
 | `COUPONPERIOD` | `coupon_period` |  `int` | Длительность купона |
 
 #### Календарь и цены
+
 | MOEX ISS | `pymoex` | Тип | Описание |
 | --- | --- | --- | --- |
 | `MATDATE` | `mat_date` |  `date` | Дата погашения |
@@ -86,9 +90,11 @@ print(f"Ближайший купон: {bond.next_coupon} ({bond.coupon_value} {
 | `DECIMALS` | `decimals_char` |  `int` | Точность, знаков после запятой |
 
 ### `Marketdata` - ход торгов
+
 Динамические данные, обновляемые в реальном времени в ходе сессии.
 
 #### Цены (% от номинала)
+
 | MOEX ISS | `pymoex` | Тип | Описание |
 | --- | --- | --- | --- |
 | `LAST` |  `last_price` |  `Decimal` | Цена последней сделки, % от номинала |
@@ -101,6 +107,7 @@ print(f"Ближайший купон: {bond.next_coupon} ({bond.coupon_value} {
 | `PREVLEGALCLOSEPRICE` | `prev_close_price` |  `Decimal` | Официальная цена закрытия предыдущего дня |
 
 #### Спрос и предложение
+
 | MOEX ISS | `pymoex` | Тип | Описание |
 | --- | --- | --- | --- |
 | `BID` | `bid` |  `Decimal` | Цена спроса (котировка на покупку) на момент окончания торговой сессии, % от номинала |
@@ -110,6 +117,7 @@ print(f"Ближайший купон: {bond.next_coupon} ({bond.coupon_value} {
 | `OFFERDEPTHT` | `offer_deptht` |  `int` | Общий объем котировок на продажу, лотов |
 
 #### Активность и объемы
+
 | MOEX ISS | `pymoex` | Тип | Описание |
 | --- | --- | --- | --- |
 | `NUMTRADES` | `num_trades` |  `int` | Количество заключенных сделок, штук |
@@ -119,6 +127,7 @@ print(f"Ближайший купон: {bond.next_coupon} ({bond.coupon_value} {
 | `VALUE` | `value` |  `Decimal` | Объем последней сделки, руб. |
 
 #### Расчетные показатели
+
 | MOEX ISS | `pymoex` | Тип | Описание |
 | --- | --- | --- | --- |
 | `YIELD` | `last_yield` |  `Decimal` | Доходность по последней сделке |
@@ -128,11 +137,13 @@ print(f"Ближайший купон: {bond.next_coupon} ({bond.coupon_value} {
 | `LASTCHANGE` | `last_change` |  `Decimal` | Изменение цены последней сделки к цене последней сделки предыдущего торгового дня |
 
 #### Служебная информация
+
 | MOEX ISS | `pymoex` | Тип | Описание |
 | --- | --- | --- | --- |
 | `TRADINGSTATUS` | `trading_status` |  `str` | Состояние торговой сессии |
 
 ### `Coupons` - купонные выплаты
+
 График исторических и будущих купонных выплат по облигации.
 
 | MOEX ISS | `pymoex` | Тип | Описание |
@@ -144,6 +155,7 @@ print(f"Ближайший купон: {bond.next_coupon} ({bond.coupon_value} {
 | `faceunit` | `face_unit` | `str` | Валюта номинала |
 
 ### `Amortizations` - амортизация
+
 График частичного или полного погашения номинала облигации.
 
 | MOEX ISS | `pymoex` | Тип | Описание |
@@ -155,6 +167,7 @@ print(f"Ближайший купон: {bond.next_coupon} ({bond.coupon_value} {
 ## Режимы торгов
 
 ### Основные режимы
+
 Основные режимы торгов облигациями с расчетами в рублях.
 
 | Board ID | Описание | Тип бумаг |
@@ -163,6 +176,7 @@ print(f"Ближайший купон: {bond.next_coupon} ({bond.coupon_value} {
 | `TQOB` | **Т+: Гособлигации** | ОФЗ (Облигации Федерального Займа). |
 
 ### ⚠️ Повышенный риск и инновации
+
 Режимы торгов для отдельных категорий облигаций и инструментов с дополнительными рисками.
 
 | Board ID | Описание | Тип бумаг |
@@ -172,6 +186,7 @@ print(f"Ближайший купон: {bond.next_coupon} ({bond.coupon_value} {
 | `TQUD` | **Т+: Облигации Д (USD)** | Облигации повышенного риска в долларах. |
 
 ### Валютные облигации
+
 Торги с расчетами в иностранной валюте.
 
 | Board ID | Описание | Валюта |
@@ -181,6 +196,7 @@ print(f"Ближайший купон: {bond.next_coupon} ({bond.coupon_value} {
 | `TQOE` | **Т+: Облигации (EUR)** | Евро (EUR) |
 
 ### Аукционы и размещение
+
 Режимы первичного рынка и выкупа (Buyback).
 
 | Board ID | Описание | Назначение |

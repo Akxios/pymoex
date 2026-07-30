@@ -16,24 +16,13 @@
 |---|---|---|
 | `MOEX_BASE_URL` | Базовый URL MOEX ISS API | `https://iss.moex.com/iss` |
 | `MOEX_TIMEOUT` | Таймаут HTTP-запросов в секундах | `10.0` |
-| `MOEX_USER_AGENT` | User-Agent клиента | `pymoex-sdk/0.1.6` |
+| `MOEX_USER_AGENT` | User-Agent клиента | `pymoex-sdk/0.1.9` |
 | `MOEX_LOG_LEVEL` | Уровень логирования | `WARNING` |
-| `MOEX_REQUEST_DELAY` | Базовая задержка между запросами | `0.1` |
+| `MOEX_REQUEST_DELAY` | Базовая задержка между запросами | `0.05` |
 | `MOEX_REQUEST_JITTER` | Случайная добавка к задержке | `0.5` |
 | `MOEX_RETRY_ATTEMPTS` | Количество попыток запроса | `3` |
-| `MOEX_RETRY_MIN_WAIT` | Минимальная пауза между retry | `1.0` |
-| `MOEX_RETRY_MAX_WAIT` | Максимальная пауза между retry | `10.0` |
-
-## Пример `.env`
-
-```env
-MOEX_TIMEOUT=15
-MOEX_REQUEST_DELAY=0.1
-MOEX_REQUEST_JITTER=0
-MOEX_RETRY_ATTEMPTS=3
-MOEX_RETRY_MIN_WAIT=1
-MOEX_RETRY_MAX_WAIT=10
-```
+| `MOEX_RETRY_MIN_WAIT` | Минимальная пауза между retry | `1` |
+| `MOEX_RETRY_MAX_WAIT` | Максимальная пауза между retry | `10` |
 
 ## Rate limit
 
