@@ -33,6 +33,7 @@
 - Поиск акций, облигаций, фондов и валют
 - Получение дивидендов, купонов и амортизаций
 - In-memory кэш с TTL и защитой от одинаковых параллельных запросов
+- Опциональный CLI для работы с MOEX из терминала
 - Настройка через переменные окружения `MOEX_*`
 
 ---
@@ -40,6 +41,10 @@
 ## Установка
 
 Требуется Python 3.12+.
+
+### SDK
+
+Если нужен только Python API без CLI-зависимостей:
 
 Через [uv](https://github.com/astral-sh/uv) (рекомендуется):
 
@@ -51,6 +56,28 @@ uv add https://github.com/Akxios/pymoex.git
 
 ```bash
 pip install https://github.com/Akxios/pymoex.git
+```
+
+### SDK + CLI
+
+Для установки SDK вместе с командным интерфейсом:
+
+Через [uv](https://github.com/astral-sh/uv) (рекомендуется):
+
+```bash
+uv add "pymoex[cli] @ git+https://github.com/Akxios/pymoex.git"
+```
+
+Через pip:
+
+```bash
+pip install "pymoex[cli] @ git+https://github.com/Akxios/pymoex.git"
+```
+
+После установки CLI доступна команда:
+
+```bash
+moex --help
 ```
 
 ---
