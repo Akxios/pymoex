@@ -151,6 +151,7 @@ class ICache(Protocol):
 async def load_share():
     return await fetch_share("SBER")
 
+
 share = await cache.get_or_set(
     "share:SBER",
     load_share,

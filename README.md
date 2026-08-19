@@ -64,6 +64,7 @@ import asyncio
 
 from pymoex import MoexClient
 
+
 async def main() -> None:
     async with MoexClient() as client:
         share = await client.share("SBER")
@@ -83,6 +84,7 @@ if __name__ == "__main__":
 
 ```python
 from pymoex import get_bond, get_share
+
 
 share = get_share("SBER")
 bond = get_bond("SU26238RMFS4")
