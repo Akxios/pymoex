@@ -1,6 +1,6 @@
 [project]
 name = "pymoex"
-version = "0.1.9"
+version = "0.1.10"
 description = "Async SDK for Moscow Exchange (MOEX) ISS API"
 authors = [{ name = "Akxios" }]
 license = "MIT"
@@ -22,11 +22,15 @@ dependencies = [
     "pydantic>=2.12.5",
     "pydantic-settings>=2.12.0",
     "tenacity>=9.1.4",
+]
+
+[project.optional-dependencies]
+cli = [
     "typer>=0.25.1",
 ]
 
 [project.scripts]
-moex = "pymoex.cli:app"
+moex = "pymoex.cli.__main__:main"
 
 [dependency-groups]
 dev = [
