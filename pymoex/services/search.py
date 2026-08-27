@@ -1,4 +1,5 @@
 import logging
+from typing import ClassVar
 
 from pymoex.core import endpoints
 from pymoex.core.constants import (
@@ -28,8 +29,14 @@ GROUPS_BY_INSTRUMENT_TYPE = {
 
 class SearchService(BaseService):
     """
-    Сервис для поиска инструментов
+    Сервис для быстрого поиска инструментов по первой странице ISS.
+
+    MOEX ограничивает ``/securities.json`` ста строками, даже если
+    передать больший ``limit``. Полный обход требует отдельного
+    пагинированного API через параметр ``start``.
     """
+
+    page_size: ClassVar[int] = 100
 
     async def find(
         self,
@@ -50,7 +57,7 @@ class SearchService(BaseService):
         async def _fetch() -> list[Search]:
             data = await self.session.get(
                 endpoints.search(),
-                params={"q": query_norm, "limit": 1000},
+                params={"q": query_norm, "limit": self.page_size},
             )
 
             raw = parse_table(get_table(data, "securities"))

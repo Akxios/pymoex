@@ -28,6 +28,8 @@ async def test_find_all_returns_ranked_results(
     assert results[1].sec_id == "SBERP"
 
     assert route.call_count == 1
+    assert route.calls.last.request.url.params["limit"] == "100"
+    assert "start" not in route.calls.last.request.url.params
 
 
 @pytest.mark.asyncio
@@ -261,4 +263,4 @@ async def test_find_sends_normalized_query_params(
     request = route.calls.last.request
 
     assert "q=sber" in str(request.url)
-    assert "limit=1000" in str(request.url)
+    assert "limit=100" in str(request.url)
