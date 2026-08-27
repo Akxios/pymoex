@@ -5,6 +5,7 @@ from pydantic import BaseModel
 
 from pymoex.core import endpoints
 from pymoex.core.constants import CacheTTL
+from pymoex.exceptions import MoexResponseParseError
 from pymoex.models.bond import Bond
 from pymoex.models.bondization import Amortization, Coupon
 from pymoex.services.base import InstrumentService
@@ -76,9 +77,19 @@ class BondsService(InstrumentService[Bond]):
         model: type[TModel],
     ) -> list[TModel]:
         data = await self._get_bond_events(ticker)
-        table = get_table(data, table_name)
 
-        if not table.get("data"):
+        if table_name not in data:
+            raise MoexResponseParseError(
+                f"Expected table {table_name!r} in MOEX response"
+            )
+
+        table = get_table(data, table_name)
+        table_data = table.get("data")
+
+        if not isinstance(table_data, list):
+            raise MoexResponseParseError(f"Invalid {table_name!r} table")
+
+        if not table_data:
             logger.info("No %s found for %s", table_name, ticker)
             return []
 

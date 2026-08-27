@@ -30,6 +30,7 @@ class MoexClient:
     ) -> None:
         self.session: MoexSession = session or MoexSession()
         self._owns_cache: bool = cache is None
+        self._owns_session: bool = session is None
 
         if not use_cache:
             self._cache: ICache = NullCache()
@@ -50,6 +51,10 @@ class MoexClient:
 
         if self._owns_cache:
             await self._cache.clear()
+
+        if self._owns_session:
+            await self.session.close()
+
         await self.session.close()
 
     async def __aenter__(self) -> Self:

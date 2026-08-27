@@ -1,10 +1,13 @@
+from collections.abc import Awaitable, Callable
 from datetime import date
 from decimal import Decimal
+from typing import cast
 
 import pytest
 from httpx import Response
 
 from pymoex.client import MoexClient
+from pymoex.exceptions import MoexResponseParseError
 from tests.conftest import MOEX_BONDIZATION_JSON, MOEX_DIVIDENDS_JSON, MockRouter
 
 
@@ -160,13 +163,65 @@ async def test_get_amortizations_missing_table(
     client: MoexClient, mock_moex: MockRouter
 ) -> None:
     """
-    Проверка: если таблицы amortizations нет в ответе, возвращается пустой список.
+    Проверка: отсутствие ожидаемой таблицы считается ошибкой формата ответа.
     """
     route = mock_moex.get("/securities/SU26238RMFS4/bondization.json").mock(
         return_value=Response(200, json={})
     )
 
-    amortizations = await client.amortizations("SU26238RMFS4")
+    with pytest.raises(
+        MoexResponseParseError,
+        match="Expected table 'amortizations' in MOEX response",
+    ):
+        _ = await client.amortizations("SU26238RMFS4")
 
-    assert amortizations == []
+    assert route.call_count == 1
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("method_name", "ticker", "endpoint", "table_name"),
+    [
+        ("dividends", "SBER", "/securities/SBER/dividends.json", "dividends"),
+        (
+            "coupons",
+            "SU26238RMFS4",
+            "/securities/SU26238RMFS4/bondization.json",
+            "coupons",
+        ),
+        (
+            "amortizations",
+            "SU26238RMFS4",
+            "/securities/SU26238RMFS4/bondization.json",
+            "amortizations",
+        ),
+    ],
+)
+async def test_event_table_data_must_be_list(
+    client: MoexClient,
+    mock_moex: MockRouter,
+    method_name: str,
+    ticker: str,
+    endpoint: str,
+    table_name: str,
+) -> None:
+    """Проверка: поле data таблицы событий должно быть списком."""
+    route = mock_moex.get(endpoint).mock(
+        return_value=Response(
+            200,
+            json={table_name: {"columns": [], "data": None}},
+        )
+    )
+
+    method = cast(
+        Callable[[str], Awaitable[object]],
+        getattr(client, method_name),
+    )
+
+    with pytest.raises(
+        MoexResponseParseError,
+        match=rf"Invalid '{table_name}' table",
+    ):
+        _ = await method(ticker)
+
     assert route.call_count == 1

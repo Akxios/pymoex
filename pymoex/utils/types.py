@@ -68,7 +68,7 @@ def parse_int(value: object) -> int | None:
             return None
 
     try:
-        return int(float(str(value)))
+        return int(str(value))
     except (TypeError, ValueError):
         return None
 
