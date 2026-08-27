@@ -124,7 +124,7 @@ class Bond(BaseInstrument):
     )
     """Доходность по оценке пред. дня"""
 
-    decimals_char: MoexDecimal = Field(default=None, alias="DECIMALS")
+    decimals_char: MoexInt = Field(default=None, alias="DECIMALS")
     """Точность, знаков после запятой"""
 
     # --- Цены (% от номинала) ---
@@ -205,7 +205,7 @@ class Bond(BaseInstrument):
     duration: MoexInt = Field(default=None, alias="DURATION")
     """Дюрация, дней"""
 
-    last_change: MoexInt = Field(default=None, alias="LASTCHANGE")
+    last_change: MoexDecimal = Field(default=None, alias="LASTCHANGE")
     """
     Изменение цены последней сделки
     к цене последней сделки предыдущего торгового дня

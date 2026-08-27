@@ -68,6 +68,20 @@ def test_bond_preserves_zero_price_and_yield() -> None:
     assert bond.effective_yield == Decimal("0")
 
 
+def test_bond_parses_decimals_and_fractional_last_change() -> None:
+    bond = Bond.model_validate(
+        {
+            "SECID": "SU26238RMFS4",
+            "SHORTNAME": "ОФЗ 26238",
+            "DECIMALS": "4.0",
+            "LASTCHANGE": "-0.25",
+        }
+    )
+
+    assert bond.decimals_char == 4
+    assert bond.last_change == Decimal("-0.25")
+
+
 @pytest.mark.asyncio
 async def test_get_bond_not_found(client: MoexClient, mock_moex: MockRouter) -> None:
     """
