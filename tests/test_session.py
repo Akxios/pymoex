@@ -18,6 +18,24 @@ from tests.conftest import MockRouter
 
 
 @pytest.mark.asyncio
+async def test_session_can_be_reused_after_close() -> None:
+    session = MoexSession()
+    first_client = session.client
+
+    await session.close()
+    await session.close()
+
+    second_client = session.client
+
+    try:
+        assert first_client.is_closed
+        assert second_client is not first_client
+        assert not second_client.is_closed
+    finally:
+        await session.close()
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize(
     ("status_code", "expected_exception"),
     [

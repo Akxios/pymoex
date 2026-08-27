@@ -211,5 +211,6 @@ class MoexSession:
 
     async def close(self) -> None:
         """Корректно закрываем HTTP-сессию."""
-        if self._client:
-            await self.client.aclose()
+        if self._client is not None:
+            await self._client.aclose()
+            self._client = None
