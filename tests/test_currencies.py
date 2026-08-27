@@ -316,3 +316,33 @@ async def test_currency_propagates_network_error_when_all_markets_fail(
 
     with pytest.raises(MoexServerError):
         _ = await client.currency("CNYRUB_TOM")
+
+
+@pytest.mark.asyncio
+async def test_currency_propagates_network_error_when_other_markets_are_empty(
+    client: MoexClient, mock_moex: MockRouter
+) -> None:
+    """
+    Проверка: пустые ответы других рынков не превращают неопределённый исход
+    запроса в ложный InstrumentNotFoundError.
+    """
+    client.session.settings.retry_attempts = 1
+    client.session.settings.retry_min_wait = 0
+    client.session.settings.retry_max_wait = 0
+
+    selt_route = mock_moex.get(
+        "/engines/currency/markets/selt/securities/CNYRUB_TOM.json"
+    ).mock(return_value=Response(500, json={"error": "unavailable"}))
+
+    empty_routes = [
+        mock_moex.get(
+            f"/engines/currency/markets/{market}/securities/CNYRUB_TOM.json"
+        ).mock(return_value=Response(200, json=EMPTY_SECURITIES_RESPONSE))
+        for market in ("otcindices", "index")
+    ]
+
+    with pytest.raises(MoexServerError):
+        _ = await client.currency("CNYRUB_TOM")
+
+    assert selt_route.call_count == 1
+    assert all(route.call_count == 1 for route in empty_routes)

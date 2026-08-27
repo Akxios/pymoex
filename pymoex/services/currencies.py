@@ -42,7 +42,6 @@ class CurrenciesService(BaseService):
 
     async def _load_currency_data(self, secid: str) -> dict[str, object]:
         last_error: MoexNetworkError | None = None
-        found_empty_response = False
 
         for market in CURRENCY_MARKETS_TO_TRY:
             try:
@@ -51,9 +50,8 @@ class CurrenciesService(BaseService):
 
                 if securities.get("data"):
                     return data
-                found_empty_response = True
             except MoexNotFoundError:
-                found_empty_response = True
+                continue
             except MoexNetworkError as e:
                 if isinstance(
                     e,
@@ -64,7 +62,7 @@ class CurrenciesService(BaseService):
                 last_error = e
                 continue
 
-        if last_error is not None and not found_empty_response:
+        if last_error is not None:
             raise last_error
 
         logger.warning("Currency %s not found in MOEX response", secid)
