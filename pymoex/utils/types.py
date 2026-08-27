@@ -58,19 +58,28 @@ def parse_decimal(value: object) -> Decimal | None:
 
 def parse_int(value: object) -> int | None:
     """
-    Преобразует строку в int, обрабатывая прочерки
+    Преобразует целочисленное значение в int, обрабатывая прочерки
     """
     if value is None:
         return None
 
     if isinstance(value, str):
-        if value.strip() in ("", "—", "-"):
+        value = value.strip()
+        if value in ("", "—", "-"):
             return None
 
     try:
-        return int(str(value))
-    except (TypeError, ValueError):
+        number = Decimal(str(value))
+    except (TypeError, ValueError, InvalidOperation):
         return None
+
+    if not number.is_finite():
+        return None
+
+    if number != number.to_integral_value():
+        return None
+
+    return int(number)
 
 
 type MoexDate = Annotated[date | None, BeforeValidator(safe_date)]
