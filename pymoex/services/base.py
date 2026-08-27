@@ -52,18 +52,7 @@ class InstrumentService[TModel: BaseModel](BaseService, ABC):
 
     def _build_instrument(self, ticker: str, data: dict[str, object]) -> TModel:
         securities = get_table(data, "securities")
-
-        if not securities.get("data"):
-            logger.warning(
-                "%s %s not found in MOEX response",
-                self.instrument_name,
-                ticker,
-            )
-            raise InstrumentNotFoundError(f"{self.instrument_name} {ticker} not found")
-
         sec_rows = parse_table(securities)
-        md_rows = parse_table(get_table(data, "marketdata"))
-        yield_rows = parse_table(get_table(data, "marketdata_yields"))
 
         if not sec_rows:
             logger.warning(
@@ -72,6 +61,9 @@ class InstrumentService[TModel: BaseModel](BaseService, ABC):
                 ticker,
             )
             raise InstrumentNotFoundError(f"{self.instrument_name} {ticker} not found")
+
+        md_rows = parse_table(get_table(data, "marketdata"))
+        yield_rows = parse_table(get_table(data, "marketdata_yields"))
 
         priority_boards = cast(
             list[str],

@@ -48,7 +48,7 @@ class CurrenciesService(BaseService):
                 data = await self.session.get(endpoints.currency(secid, market=market))
                 securities = get_table(data, "securities")
 
-                if securities.get("data"):
+                if parse_table(securities):
                     return data
             except MoexNotFoundError:
                 continue
@@ -70,11 +70,6 @@ class CurrenciesService(BaseService):
 
     def _build_currency(self, secid: str, data: dict[str, object]) -> Currency:
         securities = get_table(data, "securities")
-
-        if not securities.get("data"):
-            logger.warning("Currency %s not found in MOEX response", secid)
-            raise InstrumentNotFoundError(f"Currency {secid} not found")
-
         sec_rows = parse_table(securities)
         md_rows = parse_table(get_table(data, "marketdata"))
 
