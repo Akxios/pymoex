@@ -1,19 +1,22 @@
 import asyncio
 import logging
+import math
 import random
 import time
 from collections.abc import Mapping
 from types import TracebackType
-from typing import Self, cast
+from typing import Self, cast, final, override
 
 import httpx
 from tenacity import (
     AsyncRetrying,
+    RetryCallState,
     before_sleep_log,
     retry_if_exception,
     stop_after_attempt,
     wait_exponential,
 )
+from tenacity.wait import wait_base
 
 from pymoex.core.config import MoexSettings
 from pymoex.exceptions import (
@@ -38,7 +41,7 @@ type QueryParams = Mapping[str, QueryValue] | None
 def _is_retryable_error(exception: BaseException) -> bool:
     """
     Определяет, нужно ли повторять запрос.
-    Повторяем только при проблемах с сетью или 5xx ошибках сервера.
+    Повторяем при проблемах с сетью, 429 или 5xx ошибках сервера.
     """
 
     if isinstance(exception, httpx.TimeoutException):
@@ -48,9 +51,41 @@ def _is_retryable_error(exception: BaseException) -> bool:
         return True
 
     if isinstance(exception, httpx.HTTPStatusError):
-        return exception.response.status_code in {500, 502, 503, 504}
+        return exception.response.status_code in {429, 500, 502, 503, 504}
 
     return False
+
+
+@final
+class _WaitRetryAfter(wait_base):
+    """Использует Retry-After для 429, иначе - резервную стратегию."""
+
+    def __init__(self, fallback: wait_base) -> None:
+        self._fallback: wait_base = fallback
+
+    @override
+    def __call__(self, retry_state: RetryCallState) -> float:
+        outcome = retry_state.outcome
+        exception = outcome.exception() if outcome is not None else None
+
+        if (
+            isinstance(exception, httpx.HTTPStatusError)
+            and exception.response.status_code == 429
+        ):
+            retry_after = cast(
+                str | None,
+                exception.response.headers.get("Retry-After"),
+            )
+            if retry_after is not None:
+                try:
+                    delay = float(retry_after)
+                except ValueError:
+                    pass
+                else:
+                    if math.isfinite(delay) and delay >= 0:
+                        return delay
+
+        return self._fallback(retry_state)
 
 
 class MoexSession:
@@ -122,10 +157,12 @@ class MoexSession:
         retryer = AsyncRetrying(
             retry=retry_if_exception(_is_retryable_error),
             stop=stop_after_attempt(self.settings.retry_attempts),
-            wait=wait_exponential(
-                multiplier=1,
-                min=self.settings.retry_min_wait,
-                max=self.settings.retry_max_wait,
+            wait=_WaitRetryAfter(
+                wait_exponential(
+                    multiplier=1,
+                    min=self.settings.retry_min_wait,
+                    max=self.settings.retry_max_wait,
+                )
             ),
             before_sleep=before_sleep_log(logger, logging.WARNING),
             reraise=True,

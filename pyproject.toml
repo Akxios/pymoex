@@ -72,3 +72,5 @@ indent-style = "space"
 [tool.basedpyright]
 pythonVersion = "3.12"
 typeCheckingMode = "recommended"
+venvPath = "."
+venv = ".venv"

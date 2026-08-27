@@ -253,6 +253,44 @@ async def test_session_retries_then_succeeds(mock_moex: MockRouter) -> None:
 
 
 @pytest.mark.asyncio
+async def test_session_retries_rate_limit_after_server_delay(
+    mock_moex: MockRouter,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    settings = MoexSettings(
+        retry_attempts=2,
+        retry_min_wait=0,
+        retry_max_wait=0,
+        request_delay=0,
+        request_jitter=0,
+    )
+    sleep_calls: list[float] = []
+
+    async def fake_sleep(seconds: float) -> None:
+        sleep_calls.append(seconds)
+
+    monkeypatch.setattr("asyncio.sleep", fake_sleep)
+
+    async with MoexSession(settings=settings) as session:
+        route = mock_moex.get("/rate-limited.json").mock(
+            side_effect=[
+                Response(
+                    429,
+                    headers={"Retry-After": "2"},
+                    json={"error": "rate limit"},
+                ),
+                Response(200, json={"data": "ok"}),
+            ]
+        )
+
+        result = await session.get("/rate-limited.json")
+
+        assert result == {"data": "ok"}
+        assert route.call_count == 2
+        assert sleep_calls == [2.0]
+
+
+@pytest.mark.asyncio
 async def test_session_timeout_error_is_mapped(mock_moex: MockRouter) -> None:
     """
     Проверка: httpx.TimeoutException превращается в MoexTimeoutError.

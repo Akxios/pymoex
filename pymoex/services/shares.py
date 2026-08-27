@@ -59,9 +59,12 @@ class SharesService(InstrumentService[Share]):
         data = await self._get_share_events(ticker)
 
         if table_name not in data:
-            raise MoexResponseParseError(
-                f"Expected table {table_name!r} in MOEX response"
+            logger.warning(
+                "Table %r is unavailable in MOEX response for %s",
+                table_name,
+                ticker,
             )
+            return []
 
         table = get_table(data, table_name)
         table_data = table.get("data")

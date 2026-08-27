@@ -84,6 +84,27 @@ async def test_get_share_uses_uppercase_ticker(
 
 
 @pytest.mark.asyncio
+async def test_dividends_returns_empty_list_when_moex_omits_table(
+    client: MoexClient,
+    mock_moex: MockRouter,
+) -> None:
+    route = mock_moex.get("/securities/SBER/dividends.json").mock(
+        return_value=Response(
+            200,
+            json={
+                "description": {"columns": [], "data": []},
+                "boards": {"columns": [], "data": []},
+            },
+        )
+    )
+
+    dividends = await client.dividends("sber")
+
+    assert dividends == []
+    assert route.call_count == 1
+
+
+@pytest.mark.asyncio
 async def test_get_share_fallback_price_from_close_price(
     client: MoexClient, mock_moex: MockRouter
 ) -> None:
