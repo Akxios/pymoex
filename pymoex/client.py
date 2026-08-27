@@ -55,8 +55,6 @@ class MoexClient:
         if self._owns_session:
             await self.session.close()
 
-        await self.session.close()
-
     async def __aenter__(self) -> Self:
         return self
 

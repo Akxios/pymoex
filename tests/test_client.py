@@ -6,6 +6,7 @@ import pytest
 
 from pymoex.client import MoexClient
 from pymoex.core.cache import MemoryCache, NullCache
+from pymoex.core.session import MoexSession
 from pymoex.models.enums import InstrumentType
 
 
@@ -100,6 +101,21 @@ async def test_client_close_does_not_clear_custom_cache(
 
     cache_clear_mock.assert_not_awaited()
     session_close_mock.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_client_close_does_not_close_external_session(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    session = MoexSession()
+    client = MoexClient(session=session)
+    session_close_mock = AsyncMock()
+
+    monkeypatch.setattr(session, "close", session_close_mock)
+
+    await client.close()
+
+    session_close_mock.assert_not_awaited()
 
 
 @pytest.mark.asyncio
