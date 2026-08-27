@@ -1,4 +1,4 @@
-from typing import Literal, override
+from typing import override
 
 from pydantic import Field
 
@@ -38,7 +38,7 @@ class Search(BaseInstrument):
     """Группа инструмента (например, stock_shares, stock_bonds)"""
 
     # --- Торговые данные ---
-    is_traded: bool | None = Field(default=False, alias="is_traded")
+    is_traded: bool | None = Field(default=None, alias="is_traded")
     """Признак того, торгуется ли сейчас инструмент"""
 
     primary_boardid: str | None = Field(default=None, alias="primary_boardid")
@@ -78,9 +78,13 @@ class Search(BaseInstrument):
         if self.group:
             parts.append(f"group={self.group}")
 
-        status: Literal["Active", "Inactive"] = (
-            "Active" if self.is_traded else "Inactive"
-        )
+        if self.is_traded is True:
+            status = "Active"
+        elif self.is_traded is False:
+            status = "Inactive"
+        else:
+            status = "Unknown"
+
         parts.append(status)
 
         return f"<Search | {' | '.join(parts)}>"

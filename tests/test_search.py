@@ -3,7 +3,29 @@ from httpx import Response
 
 from pymoex.client import MoexClient
 from pymoex.models.enums import InstrumentType
+from pymoex.models.search import Search
 from tests.conftest import MOEX_SEARCH_JSON, MockRouter
+
+
+@pytest.mark.parametrize(
+    ("is_traded", "expected_status"),
+    [(True, "Active"), (False, "Inactive"), (None, "Unknown")],
+)
+def test_search_repr_preserves_trading_status(
+    is_traded: bool | None,
+    expected_status: str,
+) -> None:
+    data: dict[str, object] = {
+        "secid": "TEST",
+        "shortname": "Test",
+    }
+    if is_traded is not None:
+        data["is_traded"] = is_traded
+
+    result = Search.model_validate(data)
+
+    assert result.is_traded is is_traded
+    assert expected_status in repr(result)
 
 
 @pytest.mark.asyncio
